@@ -174,9 +174,25 @@ def fetch_og_image(url):
 def call_gemini(prompt, as_json=False):
     url  = f'https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent?key={GEMINI_KEY}'
     body = {'contents':[{'parts':[{'text':prompt}]}]}
-    if as_json: body['generationConfig'] = {'responseMimeType':'application/json'}
+    if as_json:
+        body['generationConfig'] = {'responseMimeType':'application/json'}
     r = requests.post(url, json=body, timeout=40)
-    return (r.json().get('candidates',[{}])[0].get('content',{}).get('parts',[{}])[0].get('text',''))
+    data = r.json()
+    # API 오류 로깅
+    if 'error' in data:
+        print(f'  Gemini API 오류: {data["error"].get("message", data["error"])}')
+        return ''
+    candidates = data.get('candidates', [])
+    if not candidates:
+        print(f'  Gemini 후보 없음: {str(data)[:300]}')
+        return ''
+    parts = candidates[0].get('content', {}).get('parts', [])
+    # thinking 모델은 parts[0]이 사고 과정 → 마지막 텍스트 파트가 실제 응답
+    for part in reversed(parts):
+        text = part.get('text', '').strip()
+        if text:
+            return text
+    return ''
 
 def summarize_batch(articles, is_ai=True):
     color = AI_COLOR if is_ai else SCM_COLOR
@@ -213,9 +229,13 @@ insight 예시 (이 스타일을 따라줘):
     for attempt in range(3):
         try:
             raw = call_gemini(prompt, True)
-            result = json.loads(raw)
+            if not raw:
+                raise ValueError('Gemini 빈 응답')
+            # JSON 배열만 추출 (앞뒤 설명 텍스트 제거)
+            m = re.search(r'\[.*\]', raw, re.DOTALL)
+            parsed = json.loads(m.group() if m else raw)
             for i, a in enumerate(articles):
-                r = result[i] if i < len(result) else {}
+                r = parsed[i] if i < len(parsed) else {}
                 a['summary'] = r.get('summary') or esc(a['description'][:200])
                 a['insight']  = r.get('insight', '')
             print(f'  {label} summarize 완료')
