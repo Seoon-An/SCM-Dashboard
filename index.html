@@ -61,8 +61,7 @@ input:focus{border-color:var(--coral);background:var(--bg);}
 .btn{flex:1;padding:12px;border-radius:var(--r);font-size:13px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:opacity .15s;}
 .btn:hover{opacity:.88;}
 .btn:disabled{opacity:.4;cursor:not-allowed;}
-.btn-sec{background:var(--bg2);border:1px solid var(--bdr2);color:var(--txt);}
-.btn-teal{background:var(--teal);border:none;color:#fff;}
+.btn-pri{background:var(--teal);border:none;color:#fff;}
 .msg{font-size:12px;color:var(--txt3);min-height:18px;text-align:center;margin-top:8px;}
 .stag{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:20px;font-size:11px;background:var(--bg2);border:1px solid var(--bdr);color:var(--txt2);}
 .pj{background:var(--bg);border:1px solid var(--bdr);border-radius:var(--rl);padding:16px 20px;border-left:3px solid var(--coral);}
@@ -131,7 +130,7 @@ input:focus{border-color:var(--coral);background:var(--bg);}
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
         <div>
           <div class="pt">AI × SCM 메일 관리</div>
-          <div class="ps" style="margin:0;">매일 아침 AI·SCM 인사이트 뉴스레터 자동 발송</div>
+          <div class="ps" style="margin:0;">매일 아침 + 매주 토요일 자동 발송</div>
         </div>
         <span class="stag"><span class="dot" id="syncDot"></span><span id="syncTxt">연동 확인 중...</span></span>
       </div>
@@ -141,7 +140,6 @@ input:focus{border-color:var(--coral);background:var(--bg);}
         <span>GitHub 연동이 필요합니다. <button onclick="show(3)" style="background:none;border:none;color:var(--coral);cursor:pointer;font-family:inherit;font-size:12px;text-decoration:underline;">⚙️ 연동 설정</button>에서 토큰을 입력해주세요.</span>
       </div>
 
-      <!-- 키워드 + 분량 -->
       <div class="g2">
         <div class="card">
           <div class="ct">관심 키워드</div>
@@ -157,17 +155,18 @@ input:focus{border-color:var(--coral);background:var(--bg);}
         </div>
       </div>
 
-      <!-- 피드 -->
       <div class="g2">
         <div class="card"><div class="ct" style="color:var(--coral);">🤖 AI 피드</div><div id="aiFeedList"></div></div>
         <div class="card"><div class="ct" style="color:var(--teal);">📦 SCM 피드</div><div id="scmFeedList"></div></div>
       </div>
 
-      <!-- 버튼 -->
+      <!-- 버튼: 미리보기 발송 하나만 -->
       <div class="btn-row">
-        <button class="btn btn-sec" onclick="saveToGithub()"><i class="ti ti-device-floppy"></i> 저장 (GitHub 반영)</button>
-        <button class="btn btn-teal" id="testBtn" onclick="triggerWorkflow()"><i class="ti ti-player-play"></i> 지금 바로 발송</button>
+        <button class="btn btn-pri" id="testBtn" onclick="triggerWorkflow()">
+          <i class="ti ti-send"></i> 뉴스레터 미리보기 발송
+        </button>
       </div>
+      <div style="font-size:11px;color:var(--txt3);text-align:center;margin-top:6px;">설정을 저장하고 테스트 메일을 즉시 발송합니다</div>
       <div class="msg" id="msg2"></div>
     </section>
 
@@ -183,10 +182,10 @@ input:focus{border-color:var(--coral);background:var(--bg);}
         </div>
         <div style="margin-bottom:12px;"><label class="fl">GitHub 사용자명</label><input type="text" id="ghOwner" placeholder="Seoon-An"></div>
         <div style="margin-bottom:12px;"><label class="fl">Repository 이름</label><input type="text" id="ghRepo" placeholder="SCM-Dashboard"></div>
-        <div style="margin-bottom:16px;"><label class="fl">Personal Access Token</label><input type="password" id="ghPat" placeholder="github_pat_..."></div>
+        <div style="margin-bottom:16px;"><label class="fl">Personal Access Token</label><input type="password" id="ghPat" placeholder="github_pat_... 또는 ghp_..."></div>
         <div class="btn-row">
-          <button class="btn btn-sec" onclick="savePat()"><i class="ti ti-device-floppy"></i> 저장</button>
-          <button class="btn btn-teal" onclick="testConnection()"><i class="ti ti-plug"></i> 연결 테스트</button>
+          <button class="btn" style="background:var(--bg2);border:1px solid var(--bdr2);color:var(--txt);" onclick="savePat()"><i class="ti ti-device-floppy"></i> 저장</button>
+          <button class="btn btn-pri" onclick="testConnection()"><i class="ti ti-plug"></i> 연결 테스트</button>
         </div>
         <div class="msg" id="msg3"></div>
       </div>
@@ -261,47 +260,54 @@ function adj(id,d){
 
 async function saveToGithub(){
   const {owner,repo,pat}=getGh();
-  if(!pat){setMsg('msg2','먼저 ⚙️ GitHub 연동 설정에서 토큰을 입력해주세요','#f59e0b');return;}
-  setMsg('msg2','저장 중...');
+  if(!pat)return false;
   try{
     const fileR=await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/config.json`,{headers:{Authorization:`Bearer ${pat}`,Accept:'application/vnd.github+json'}});
     const fileD=await fileR.json();
     const res=await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/config.json`,{method:'PUT',headers:{Authorization:`Bearer ${pat}`,'Content-Type':'application/json',Accept:'application/vnd.github+json'},body:JSON.stringify({message:'대시보드 설정 업데이트',content:btoa(unescape(encodeURIComponent(JSON.stringify(cfg,null,2)))),sha:fileD.sha})});
-    if(res.ok||res.status===200)setMsg('msg2','✓ 저장 완료 — 다음 뉴스레터부터 반영됩니다','#22c55e');
-    else setMsg('msg2','저장 실패: '+res.status,'#E97451');
-  }catch(e){setMsg('msg2','오류: '+e.message,'#E97451');}
+    return res.ok||res.status===200;
+  }catch(e){return false;}
 }
 
 async function triggerWorkflow(){
   const {owner,repo,pat}=getGh();
   if(!pat){setMsg('msg2','먼저 ⚙️ GitHub 연동 설정에서 토큰을 입력해주세요','#f59e0b');return;}
   document.getElementById('testBtn').disabled=true;
+  setMsg('msg2','설정 저장 중...');
+  const saved=await saveToGithub();
+  if(!saved){setMsg('msg2','설정 저장 실패. 연동 설정을 확인해주세요','#E97451');document.getElementById('testBtn').disabled=false;return;}
   setMsg('msg2','발송 트리거 중...');
   try{
-    await saveToGithub();
     const res=await fetch(`https://api.github.com/repos/${owner}/${repo}/actions/workflows/newsletter.yml/dispatches`,{method:'POST',headers:{Authorization:`Bearer ${pat}`,'Content-Type':'application/json',Accept:'application/vnd.github+json'},body:JSON.stringify({ref:'main'})});
-    if(res.ok||res.status===204)setMsg('msg2','✓ 발송 시작됨 — GitHub Actions 실행 중 (1~2분 후 메일 도착)','#22c55e');
+    if(res.ok||res.status===204)setMsg('msg2','✓ 발송 시작됨 — 1~2분 후 메일 도착 예정 ✉️','#22c55e');
     else setMsg('msg2','트리거 실패: '+res.status,'#E97451');
   }catch(e){setMsg('msg2','오류: '+e.message,'#E97451');}
   finally{document.getElementById('testBtn').disabled=false;}
 }
 
 function savePat(){
-  localStorage.setItem('gh_owner',document.getElementById('ghOwner').value.trim());
-  localStorage.setItem('gh_repo',document.getElementById('ghRepo').value.trim());
-  localStorage.setItem('gh_pat',document.getElementById('ghPat').value.trim());
+  const owner=document.getElementById('ghOwner').value.trim();
+  const repo=document.getElementById('ghRepo').value.trim();
+  const pat=document.getElementById('ghPat').value.trim();
+  if(!owner||!repo||!pat){setMsg('msg3','세 칸 모두 입력해주세요','#f59e0b');return;}
+  localStorage.setItem('gh_owner',owner);
+  localStorage.setItem('gh_repo',repo);
+  localStorage.setItem('gh_pat',pat);
   setMsg('msg3','✓ 저장됨','#22c55e');
   loadConfig();
 }
 
 async function testConnection(){
-  const {owner,repo,pat}=getGh();
-  if(!pat){setMsg('msg3','토큰을 입력해주세요','#f59e0b');return;}
+  const owner=document.getElementById('ghOwner').value.trim();
+  const repo=document.getElementById('ghRepo').value.trim();
+  const pat=document.getElementById('ghPat').value.trim();
+  if(!owner||!repo||!pat){setMsg('msg3','세 칸 모두 입력해주세요','#f59e0b');return;}
+  localStorage.setItem('gh_owner',owner);localStorage.setItem('gh_repo',repo);localStorage.setItem('gh_pat',pat);
   setMsg('msg3','연결 테스트 중...');
   try{
     const r=await fetch(`https://api.github.com/repos/${owner}/${repo}`,{headers:{Authorization:`Bearer ${pat}`,Accept:'application/vnd.github+json'}});
     if(r.ok)setMsg('msg3','✓ 연결 성공!','#22c55e');
-    else setMsg('msg3','연결 실패: 토큰 또는 리포 이름 확인','#E97451');
+    else setMsg('msg3','연결 실패 ('+r.status+'): 토큰 또는 리포 이름 확인','#E97451');
   }catch(e){setMsg('msg3','오류: '+e.message,'#E97451');}
 }
 
