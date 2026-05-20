@@ -328,7 +328,7 @@ def build_html(editor_note, ai_top, scm_top, q_hits):
     if editor_note:
         H += f'''<div style="padding:18px 32px;border-bottom:1px solid #eeeeee;">
   <div style="font-size:10px;font-weight:700;letter-spacing:2px;color:#bbbbbb;text-transform:uppercase;margin-bottom:10px;">📝 오늘의 한 마디</div>
-  <div style="padding:16px 18px;background:#fafafa;border-radius:8px;border-left:3px solid #dddddd;font-size:14px;color:#444444;line-height:1.85;">{esc(editor_note)}</div>
+  <div style="padding:16px 18px;background:#fafafa;border-radius:8px;border-left:3px solid #dddddd;font-size:14px;color:#444444;line-height:1.85;">{esc(editor_note).replace(chr(10)+chr(10),"<br><br>").replace(chr(10),"<br>")}</div>
 </div>'''
 
     # 히어로
