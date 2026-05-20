@@ -12,7 +12,7 @@ with open('config.json', encoding='utf-8') as f:
     config = json.load(f)
 
 GEMINI_KEY   = os.environ['GEMINI_API_KEY']
-GEMINI_MODEL = 'gemini-2.5-flash'
+GEMINI_MODEL = 'gemini-2.0-flash'
 TO_EMAIL     = os.environ['TO_EMAIL']
 GMAIL_USER   = os.environ['GMAIL_ADDRESS']
 GMAIL_PASS   = os.environ['GMAIL_APP_PASSWORD']
@@ -66,7 +66,8 @@ def main():
         a['og_image'] = fetch_og_image(a['link'])
 
     print('인사이트 생성 중...')
-    summarize_all(ai_top, scm_top)
+    summarize_batch(ai_top, is_ai=True)
+    summarize_batch(scm_top, is_ai=False)
 
     print('에디터 노트 생성 중...')
     editor_note = gen_editor_note(ai_top, scm_top, q_hits)
@@ -178,65 +179,56 @@ def call_gemini(prompt, as_json=False):
     if 'error' in data:
         print(f'  Gemini 오류: {data["error"].get("message","")}')
         return ''
-    # gemini-2.5-flash는 thinking 파트가 parts[0]에 오는 경우가 있으므로 마지막 텍스트 사용
     parts = data.get('candidates',[{}])[0].get('content',{}).get('parts',[])
-    for part in reversed(parts):
-        text = part.get('text','').strip()
-        if text:
-            return text
-    return ''
+    if not parts:
+        print(f'  Gemini 빈 응답: {str(data)[:300]}')
+        return ''
+    return parts[0].get('text', '')
 
-def summarize_all(ai_articles, scm_articles):
-    """AI·SCM 기사를 한 번의 Gemini 호출로 처리해 속도 제한 방지."""
-    tagged = [(a, 'AI', AI_COLOR, AI_BG) for a in ai_articles] + \
-             [(a, 'SCM', SCM_COLOR, SCM_BG) for a in scm_articles]
-    if not tagged:
+def summarize_batch(articles, is_ai=True):
+    if not articles:
         return
+    color = AI_COLOR if is_ai else SCM_COLOR
+    bg    = AI_BG    if is_ai else SCM_BG
+    label = 'AI' if is_ai else 'SCM'
+    items = '\n'.join([f'{i+1}. 제목: {a["title"]}\n   내용: {a["description"][:300]}'
+                       for i, a in enumerate(articles)])
+    prompt = f"""다음 {len(articles)}개 기사를 K-brand FBA SCM 실무자를 위한 뉴스레터로 정리해줘.
+반드시 한국어로. 영문 기사도 한국어로 의역.
 
-    items = '\n'.join([
-        f'{i+1}. [{cat}] 제목: {a["title"]}\n   내용: {a["description"][:250]}'
-        for i, (a, cat, _, _) in enumerate(tagged)
-    ])
+각 기사마다 두 필드:
+- summary: 핵심 내용 2문장. 친절한 에디터 말투, 존댓말, 이모지 1~2개.
+- insight: FBA 이커머스·SCM 물류 실무 활용 인사이트 1~2문장. 이모지 1개. 해당 없으면 "".
 
-    prompt = f"""다음 기사들을 K-brand FBA SCM 실무자를 위한 뉴스레터로 정리해줘.
-반드시 한국어로. 영문 기사도 한국어로 의역. 제목은 원문 유지.
+HTML 강조 (summary·insight 모두):
+- <strong style="color:{color}">강조 텍스트</strong>
+- <span style="background:{bg};padding:1px 6px;border-radius:3px;font-weight:600;font-size:12px;color:{color}">키워드</span>
 
-[AI] 기사 HTML 강조색: #C85A35 / 배경: #FFF3E0
-[SCM] 기사 HTML 강조색: #175F7A / 배경: #E3F2F8
-
-각 기사마다:
-- summary: 핵심 내용 2문장. 에디터 말투, 존댓말, 이모지 1~2개.
-- insight: FBA 이커머스·SCM 실무 활용 인사이트 1~2문장. 이모지 1개. 해당 없으면 "".
-
-HTML 강조 규칙 (각 기사 카테고리 색상 사용):
-- <strong style="color:해당색상">텍스트</strong>
-- <span style="background:해당배경;padding:1px 6px;border-radius:3px;font-weight:600;font-size:12px;color:해당색상">키워드</span>
-
-insight 스타일 예시 ([AI] 기사):
-"이제 AI가 단순 보조를 넘어 <strong style="color:#C85A35">업무 자체를 대신 처리</strong>하는 시대가 됐습니다 💼 <span style="background:#FFF3E0;padding:1px 6px;border-radius:3px;font-weight:600;font-size:12px;color:#C85A35">발주서 자동화</span>에도 바로 응용할 수 있을 것 같아요!"
+insight 예시:
+"이제 AI가 단순 보조를 넘어 <strong style="color:{color}">업무 자체를 대신 처리</strong>하는 시대가 됐습니다 💼 <span style="background:{bg};padding:1px 6px;border-radius:3px;font-weight:600;font-size:12px;color:{color}">발주서 자동화</span>에도 바로 응용할 수 있을 것 같아요!"
 
 {items}
 
-JSON 배열로만 응답 (설명 없이):
+JSON 배열로만 응답:
 [{{"summary":"...","insight":"..."}}, ...]"""
-
-    try:
-        raw = call_gemini(prompt, True)
-        if not raw:
-            raise ValueError('빈 응답')
-        # JSON 배열만 추출 (앞뒤 설명 텍스트 제거)
-        m = re.search(r'\[.*\]', raw, re.DOTALL)
-        result = json.loads(m.group() if m else raw)
-        for i, (a, _, _, _) in enumerate(tagged):
-            r = result[i] if i < len(result) else {}
-            a['summary'] = r.get('summary') or esc(a['description'][:200])
-            a['insight']  = r.get('insight', '')
-        print(f'  summarize_all 완료 ({len(tagged)}건)')
-    except Exception as e:
-        print(f'  summarize_all 실패: {e}')
-        for a, _, _, _ in tagged:
-            a['summary'] = esc(a['description'][:200])
-            a['insight']  = ''
+    for attempt in range(3):
+        try:
+            raw = call_gemini(prompt, True)
+            if not raw:
+                raise ValueError('빈 응답')
+            m = re.search(r'\[.*\]', raw, re.DOTALL)
+            result = json.loads(m.group() if m else raw)
+            for i, a in enumerate(articles):
+                r = result[i] if i < len(result) else {}
+                a['summary'] = r.get('summary') or esc(a['description'][:200])
+                a['insight']  = r.get('insight', '')
+            print(f'  {label} summarize 완료')
+            return
+        except Exception as e:
+            print(f'  {label} summarize 실패 (시도 {attempt+1}/3): {e}')
+    for a in articles:
+        a['summary'] = esc(a['description'][:200])
+        a['insight']  = ''
 
 def gen_editor_note(ai_top, scm_top, q_hits):
     ai_names = {f['name'] for f in AI_FEEDS}
