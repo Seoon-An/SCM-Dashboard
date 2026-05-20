@@ -223,7 +223,9 @@ def gen_editor_note(ai_top, scm_top, q_hits):
 두번째 문단: "📦 SCM —" 로 시작, SCM 뉴스 핵심 2-3문장
 친절한 존댓말. [제약] 특정 회사명·이직 언급 금지.
 에디터 노트 전문(다른 말 없이):"""
-    return call_gemini(prompt).strip()
+    result = call_gemini(prompt).strip()
+    print(f'  에디터 노트: {"생성됨" if result else "[비어있음 — Gemini 실패]"}')
+    return result
 
 def gen_weekly_summary(ai_top, scm_top, top_kw):
     ai_t  = [a['title'] for a in ai_top[:5]]
@@ -279,7 +281,7 @@ def render_hero(a, color):
     return f'''<div style="margin-bottom:28px;border-radius:10px;overflow:hidden;border:1px solid #e8e8e8;">
 {img_block}
 <div style="background:{color};padding:18px 26px;">
-  <div style="font-size:10px;font-weight:800;letter-spacing:2px;color:rgba(255,255,255,.7);margin-bottom:7px;">🌟 오늘의 하이라이트</div>
+  <div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.75);margin-bottom:7px;">🌟 오늘의 하이라이트</div>
   <a href="{link}" style="text-decoration:none;"><div style="font-size:20px;font-weight:900;color:#fff;line-height:1.35;">{hl}</div></a>
   <div style="font-size:11px;color:rgba(255,255,255,.55);margin-top:7px;">{src}</div>
 </div>
@@ -330,7 +332,7 @@ def build_html(editor_note, ai_top, scm_top, q_hits):
 
     # 헤더
     H += f'''<div style="padding:24px 32px 18px;border-bottom:2px solid #111111;">
-  <div style="font-size:10px;font-weight:700;letter-spacing:2.5px;color:#aaaaaa;text-transform:uppercase;margin-bottom:6px;">AI × SCM DAILY &nbsp;·&nbsp; 읽기 약 12분</div>
+  <div style="font-size:13px;font-weight:700;letter-spacing:1.5px;color:#aaaaaa;text-transform:uppercase;margin-bottom:6px;">AI × SCM DAILY &nbsp;·&nbsp; 읽기 약 12분</div>
   <div style="font-size:26px;font-weight:900;color:#111111;letter-spacing:-0.5px;">☕ 굿모닝!</div>
   <div style="font-size:13px;color:#aaaaaa;margin-top:6px;">{kr_date(datetime.now())}</div>
 </div>'''
@@ -339,7 +341,7 @@ def build_html(editor_note, ai_top, scm_top, q_hits):
     if not editor_note:
         editor_note = '🤖 AI — 오늘도 AI 업계에서 흥미로운 소식들이 들어왔습니다.\n\n📦 SCM — 물류·공급망 현장의 최신 트렌드를 확인해보세요.'
     H += f'''<div style="padding:18px 32px;border-bottom:1px solid #eeeeee;">
-  <div style="font-size:10px;font-weight:700;letter-spacing:2px;color:#bbbbbb;text-transform:uppercase;margin-bottom:10px;">📝 오늘의 한 마디</div>
+  <div style="font-size:13px;font-weight:700;letter-spacing:1px;color:#bbbbbb;margin-bottom:10px;">📝 오늘의 한 마디</div>
   <div style="padding:16px 18px;background:#fafafa;border-radius:8px;border-left:3px solid #dddddd;font-size:14px;color:#444444;line-height:1.85;">{esc(editor_note).replace(chr(10)+chr(10),"<br><br>").replace(chr(10),"<br>")}</div>
 </div>'''
 
@@ -369,7 +371,7 @@ def build_html(editor_note, ai_top, scm_top, q_hits):
     # Quick Hits
     if q_hits:
         H += '<div style="padding:20px 32px;background:#fafafa;border-top:1px solid #eeeeee;">'
-        H += '<div style="font-size:11px;font-weight:700;letter-spacing:2px;color:#aaaaaa;text-transform:uppercase;margin-bottom:14px;">⚡ 빠르게 보는 헤드라인</div>'
+        H += '<div style="font-size:13px;font-weight:700;color:#aaaaaa;margin-bottom:14px;">⚡ 빠르게 보는 헤드라인</div>'
         for i, a in enumerate(q_hits):
             is_ai = a['source'] in ai_names
             tc = AI_COLOR if is_ai else SCM_COLOR
