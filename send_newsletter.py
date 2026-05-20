@@ -411,8 +411,14 @@ def build_html(editor_note, ai_top, scm_top, q_hits):
     """일간 뉴스레터 HTML — 에디터 노트 한덩어리 + 히어로 + 2단"""
     ai_names = {f['name'] for f in AI_FEEDS}
 
+# 히어로 후보: AI·SCM 관련 키워드가 제목/설명에 있는 기사만
+    HERO_KW = ['AI', '인공지능', 'SCM', '물류', '공급망', '자동화', '에이전트',
+               '로봇', 'robot', 'agent', '이커머스', 'FBA', '수요예측', '재고',
+               'supply chain', 'logistics', 'warehouse', 'automation']
     all_combined = sorted(ai_top + scm_top, key=lambda x: x['date'], reverse=True)
-    hero_article = all_combined[0] if all_combined else None
+    relevant = [a for a in all_combined
+                if any(kw.lower() in (a['title']+' '+a['description']).lower() for kw in HERO_KW)]
+    hero_article = relevant[0] if relevant else all_combined[0]
     hero_color   = AI_COLOR if hero_article in ai_top else SCM_COLOR
     ai_col       = [a for a in ai_top  if a is not hero_article]
     scm_col      = [a for a in scm_top if a is not hero_article]
