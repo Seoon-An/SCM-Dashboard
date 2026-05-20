@@ -68,8 +68,9 @@ def main():
     print('인사이트 생성 중...')
     import time
     summarize_batch(ai_top, is_ai=True)
-    time.sleep(3)
+    time.sleep(15)
     summarize_batch(scm_top, is_ai=False)
+    time.sleep(15)
 
     print('에디터 노트 생성 중...')
     editor_note = gen_editor_note(ai_top, scm_top, q_hits)
@@ -243,7 +244,7 @@ insight 예시 (이 스타일을 따라줘):
         except Exception as e:
             print(f'  {label} summarize 실패 (시도 {attempt+1}/3): {e}')
             if attempt < 2:
-                time.sleep(5)
+                time.sleep(15)
     for a in articles:
         a['summary'] = esc(a['description'][:200])
         a['insight']  = ''
@@ -274,11 +275,18 @@ SCM → <strong style="color:#175F7A">텍스트</strong> 또는 <span style="bac
 위 태그만 사용. 문단 구분은 <br><br>.
 
 에디터 노트만 출력 (다른 말 없이):"""
-    result = call_gemini(prompt).strip()
-    # Gemini가 마크다운 코드블록으로 감싸는 경우 제거
-    result = re.sub(r'^```[a-z]*\n?', '', result).rstrip('`').strip()
-    print(f'  에디터 노트: {"생성됨" if result else "[비어있음]"}')
-    return result
+    import time
+    for attempt in range(3):
+        result = call_gemini(prompt).strip()
+        result = re.sub(r'^```[a-z]*\n?', '', result).rstrip('`').strip()
+        if result:
+            print(f'  에디터 노트: 생성됨')
+            return result
+        print(f'  에디터 노트 실패 (시도 {attempt+1}/3)')
+        if attempt < 2:
+            time.sleep(15)
+    print(f'  에디터 노트: 기본값 사용')
+    return ''
 
 def gen_weekly_summary(ai_top, scm_top, top_kw):
     ai_t  = [a['title'] for a in ai_top[:5]]
