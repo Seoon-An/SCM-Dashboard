@@ -66,8 +66,7 @@ def main():
         a['og_image'] = fetch_og_image(a['link'])
 
     print('인사이트 생성 중...')
-    summarize_batch(ai_top, is_ai=True)
-    summarize_batch(scm_top, is_ai=False)
+    summarize_all(ai_top, scm_top)
 
     print('에디터 노트 생성 중...')
     editor_note = gen_editor_note(ai_top, scm_top, q_hits)
@@ -176,48 +175,60 @@ def call_gemini(prompt, as_json=False):
     r = requests.post(url, json=body, timeout=40)
     return (r.json().get('candidates',[{}])[0].get('content',{}).get('parts',[{}])[0].get('text',''))
 
-def summarize_batch(articles, is_ai=True):
-    color = AI_COLOR if is_ai else SCM_COLOR
-    bg    = AI_BG    if is_ai else SCM_BG
-    items = '\n'.join([f'{i+1}. 제목: {a["title"]}\n   내용: {a["description"][:300]}'
-                       for i, a in enumerate(articles)])
-    prompt = f"""다음 {len(articles)}개 기사를 K-brand FBA SCM 실무자를 위한 뉴스레터로 정리해줘.
-모든 기사 반드시 한국어로. 영문은 한국어로 의역.
+def summarize_all(ai_articles, scm_articles):
+    """AI·SCM 기사를 한 번의 Gemini 호출로 처리 (속도 제한 방지)."""
+    import time
+    tagged = [(a, AI_COLOR, AI_BG) for a in ai_articles] + \
+             [(a, SCM_COLOR, SCM_BG) for a in scm_articles]
+    if not tagged:
+        return
+
+    items = '\n'.join([
+        f'{i+1}. [강조색:{color} / 배경:{bg}]\n   제목: {a["title"]}\n   내용: {a["description"][:300]}'
+        for i, (a, color, bg) in enumerate(tagged)
+    ])
+
+    prompt = f"""다음 {len(tagged)}개 기사를 K-brand FBA SCM 실무자를 위한 뉴스레터로 정리해줘.
+
+규칙:
+- summary·insight 모두 반드시 한국어로 작성. 영문 기사도 한국어로 의역.
+- 제목은 건드리지 않음 (그대로 유지).
 
 각 기사마다 두 필드:
+- summary: 핵심 내용 2문장. 친절한 에디터 말투, 존댓말, 이모지 1~2개.
+- insight: FBA 이커머스·SCM 물류 실무 활용 인사이트 1~2문장. 이모지 1개. 관련 없으면 "".
 
-■ summary
-기사 핵심 내용을 2문장으로. 친절한 에디터 말투, 존댓말, 이모지 1~2개.
+HTML 강조 (각 기사에 표시된 강조색·배경색을 그대로 사용):
+- 굵은 강조: <strong style="color:[해당기사 강조색]">텍스트</strong>
+- 키워드 배지: <span style="background:[해당기사 배경색];padding:1px 6px;border-radius:3px;font-weight:600;font-size:12px;color:[해당기사 강조색]">키워드</span>
+- 위 두 태그만 사용.
 
-■ insight
-K-brand FBA 이커머스 또는 SCM 물류 실무에서 바로 쓸 수 있는 인사이트를 에디터 말투로 1~2문장.
-이모지 1개 포함. 핵심 액션이나 키워드를 HTML 강조로 눈에 띄게 표현.
-관련성이 없으면 빈 문자열 "".
-
-HTML 강조 규칙 (summary·insight 모두 적용):
-- 굵은 색 강조: <strong style="color:{color}">강조 텍스트</strong>
-- 키워드 배지: <span style="background:{bg};padding:1px 6px;border-radius:3px;font-weight:600;font-size:12px;color:{color}">키워드</span>
-- 위 두 태그만 사용. 다른 HTML 태그 절대 금지.
-
-insight 예시 (이 스타일을 따라줘):
-"이제 AI가 단순 보조를 넘어 <strong style="color:{color}">업무 자체를 대신 처리</strong>하는 시대가 됐습니다 💼 <span style="background:{bg};padding:1px 6px;border-radius:3px;font-weight:600;font-size:12px;color:{color}">발주서 자동화</span>에도 바로 응용할 수 있을 것 같아요!"
+insight 스타일 예시 (강조색이 #C85A35인 기사의 경우):
+"이제 AI가 단순 보조를 넘어 <strong style="color:#C85A35">업무 자체를 대신 처리</strong>하는 시대가 됐습니다 💼 <span style="background:#FFF3E0;padding:1px 6px;border-radius:3px;font-weight:600;font-size:12px;color:#C85A35">발주서 자동화</span>에도 바로 응용할 수 있을 것 같아요!"
 
 {items}
 
-반드시 JSON 배열로만 응답 (설명 없이):
+JSON 배열로만 응답 (설명 없이):
 [{{"summary":"...","insight":"..."}}, ...]"""
-    try:
-        raw = call_gemini(prompt, True)
-        result = json.loads(raw)
-        for i, a in enumerate(articles):
-            r = result[i] if i < len(result) else {}
-            a['summary'] = r.get('summary') or esc(a['description'][:200])
-            a['insight']  = r.get('insight', '')
-    except Exception as e:
-        print(f'  summarize_batch 실패: {e}')
-        for a in articles:
-            a['summary'] = esc(a['description'][:200])
-            a['insight']  = ''
+
+    for attempt in range(3):
+        try:
+            raw = call_gemini(prompt, True)
+            result = json.loads(raw)
+            for i, (a, color, bg) in enumerate(tagged):
+                r = result[i] if i < len(result) else {}
+                a['summary'] = r.get('summary') or esc(a['description'][:200])
+                a['insight']  = r.get('insight', '')
+            print(f'  summarize_all 완료 ({len(tagged)}건)')
+            return
+        except Exception as e:
+            print(f'  summarize_all 실패 (시도 {attempt+1}/3): {e}')
+            if attempt < 2:
+                time.sleep(3)
+
+    for a, _, _ in tagged:
+        a['summary'] = esc(a['description'][:200])
+        a['insight']  = ''
 
 def gen_editor_note(ai_top, scm_top, q_hits):
     ai_names = {f['name'] for f in AI_FEEDS}
