@@ -6,7 +6,7 @@ import json, os, re, sys, smtplib
 from datetime import datetime, timedelta, timezone
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-import feedparser, requests
+import feedparser, requests, time
 
 with open('config.json', encoding='utf-8') as f:
     config = json.load(f)
@@ -165,11 +165,22 @@ def fetch_og_image(url):
     except: pass
     return None
 
+_last_call = [0]
+
 def call_gemini(prompt, as_json=False):
+    # 분당 10회 제한 — 최소 7초 간격 유지
+    wait = 7 - (time.time() - _last_call[0])
+    if wait > 0:
+        time.sleep(wait)
+    _last_call[0] = time.time()
+
     url  = f'https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent?key={GEMINI_KEY}'
     body = {'contents':[{'parts':[{'text':prompt}]}]}
     if as_json: body['generationConfig'] = {'responseMimeType':'application/json'}
     r = requests.post(url, json=body, timeout=30)
+    if r.status_code != 200:
+        print(f'  Gemini 오류 {r.status_code}: {r.text[:80]}')
+        return ''
     return (r.json().get('candidates',[{}])[0].get('content',{}).get('parts',[{}])[0].get('text',''))
 
 def summarize(a):
