@@ -152,12 +152,20 @@ def pick_quick_hits(all_arts, picked, max_h):
 def fetch_og_image(url):
     try:
         r = requests.get(url, headers={'User-Agent':'Mozilla/5.0'}, timeout=5)
-        h = r.text[:15000]
+        h = r.text[:20000]
         for p in [r'<meta[^>]+property=["\']og:image["\'][^>]+content=["\']([^"\']+)["\']',
                   r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:image["\']',
-                  r'<meta[^>]+name=["\']twitter:image["\'][^>]+content=["\']([^"\']+)["\']']:
+                  r'<meta[^>]+name=["\']twitter:image["\'][^>]+content=["\']([^"\']+)["\']',
+                  r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+name=["\']twitter:image["\']']:
             m = re.search(p, h, re.I)
             if m and m.group(1).startswith('http'): return m.group(1)
+        # 본문 첫 번째 의미있는 이미지 fallback
+        for m in re.finditer(r'<img[^>]+src=["\']([^"\']+)["\']', h, re.I):
+            src = m.group(1)
+            if (src.startswith('http') and
+                    not re.search(r'logo|icon|avatar|pixel|tracking|1x1|spinner|blank|transparent', src, re.I) and
+                    re.search(r'\.(jpg|jpeg|png|webp)', src, re.I)):
+                return src
     except: pass
     return None
 
@@ -169,33 +177,37 @@ def call_gemini(prompt, as_json=False):
     return (r.json().get('candidates',[{}])[0].get('content',{}).get('parts',[{}])[0].get('text',''))
 
 def summarize_batch(articles, is_ai=True):
-    color    = AI_COLOR if is_ai else SCM_COLOR
-    bg       = AI_BG    if is_ai else SCM_BG
-    fba_hint = ('K-brand FBA 이커머스 실무에 바로 쓸 수 있는 인사이트가 있으면 자연스럽게 body 안에 녹여줘.'
-                if is_ai else '')
+    color = AI_COLOR if is_ai else SCM_COLOR
+    bg    = AI_BG    if is_ai else SCM_BG
     items = '\n'.join([f'{i+1}. 제목: {a["title"]}\n   내용: {a["description"][:300]}'
                        for i, a in enumerate(articles)])
-    prompt = f"""다음 {len(articles)}개 기사를 각각 뉴스레터 에디터 스타일로 요약해줘.
-tone: 친절한 존댓말, 따뜻하고 친근하게, 이모지 1~2개.
-각 기사 3~4문장. 영문이면 한국어로 의역.
-{fba_hint}
+    prompt = f"""다음 {len(articles)}개 기사를 K-brand FBA SCM Operations Manager를 위한 뉴스레터 형식으로 정리해줘.
+영문 기사는 반드시 한국어로 의역해서 작성해.
 
-핵심 내용은 <strong style="color:{color}">텍스트</strong> 로,
-키워드 강조는 <span style="background:{bg};padding:0 3px;border-radius:2px;font-weight:600;font-size:11px;color:{color}">키워드</span> 로 표현해줘. (기사당 1~2개 이하)
-그 외 다른 HTML 태그는 절대 쓰지 마.
+각 기사마다 두 필드로 구성:
+- summary: 오늘 이 기사의 핵심 내용 1~2문장. 친절한 존댓말, 이모지 1개.
+- insight: K-brand FBA 이커머스 또는 SCM 실무에 적용할 수 있는 인사이트 1~2문장. 관련성이 없으면 빈 문자열 "".
+
+HTML 강조 (summary와 insight 모두):
+핵심 내용 → <strong style="color:{color}">텍스트</strong>
+키워드 강조 → <span style="background:{bg};padding:0 3px;border-radius:2px;font-weight:600;font-size:12px;color:{color}">키워드</span>
+그 외 HTML 태그는 절대 쓰지 마.
 
 {items}
 
 JSON 배열만 (기사 순서 그대로):
-[{{"body":"...HTML string..."}}, ...]"""
+[{{"summary":"...","insight":"..."}}, ...]"""
     try:
         result = json.loads(call_gemini(prompt, True))
         for i, a in enumerate(articles):
-            a['body'] = result[i].get('body', esc(a['description'][:200])) if i < len(result) else esc(a['description'][:200])
+            r = result[i] if i < len(result) else {}
+            a['summary'] = r.get('summary') or esc(a['description'][:200])
+            a['insight']  = r.get('insight', '')
     except Exception as e:
         print(f'  summarize_batch 실패: {e}')
         for a in articles:
-            a['body'] = esc(a['description'][:200])
+            a['summary'] = esc(a['description'][:200])
+            a['insight']  = ''
 
 def gen_editor_note(ai_top, scm_top, q_hits):
     ai_names = {f['name'] for f in AI_FEEDS}
@@ -203,18 +215,23 @@ def gen_editor_note(ai_top, scm_top, q_hits):
     scm_t = [f'- {a["title"]}' for a in (scm_top + [x for x in q_hits if x['source'] not in ai_names])[:8]]
     kw    = ', '.join(config.get('keywords', []))
     prompt = f"""너는 K-brand FBA SCM Operations Manager 독자를 위한 뉴스레터 에디터야.
+오늘 수집된 기사 목록:
 관심 키워드: {kw}
-[AI] {chr(10).join(ai_t)}
-[SCM] {chr(10).join(scm_t)}
+[AI 기사] {chr(10).join(ai_t)}
+[SCM 기사] {chr(10).join(scm_t)}
 
-두 문단을 하나로 이어서 작성. 각 문단 앞에 이모지 포함:
-첫 문단: "🤖 AI —" 로 시작, AI 뉴스 핵심 2~3문장
-두번째 문단: "📦 SCM —" 로 시작, SCM 뉴스 핵심 2~3문장
-친절한 존댓말. [제약] 특정 회사명·이직 언급 금지.
+위 기사들의 실제 내용을 바탕으로 오늘의 에디터 노트를 작성해줘.
+반드시 오늘 수집된 기사에서 나온 구체적인 내용이나 흐름을 언급해야 해. 일반적인 말은 쓰지 마.
 
-AI 관련 강조: <strong style="color:#C85A35">텍스트</strong> 또는 <span style="background:#FFF3E0;padding:1px 6px;border-radius:3px;font-weight:600;color:#C85A35;font-size:13px;">키워드</span>
-SCM 관련 강조: <strong style="color:#175F7A">텍스트</strong> 또는 <span style="background:#E3F2F8;padding:1px 6px;border-radius:3px;font-weight:600;color:#175F7A;font-size:13px;">키워드</span>
-그 외 다른 HTML 태그는 절대 쓰지 마. 문단 구분은 <br><br> 로.
+두 문단 구성:
+첫 문단 "🤖 AI —" 로 시작: 오늘 AI 기사들 중 가장 주목할 흐름이나 공통 키워드 2~3문장.
+두번째 문단 "📦 SCM —" 로 시작: 오늘 SCM 기사 중 실무자가 지금 당장 주목해야 할 포인트 2~3문장.
+친절한 존댓말. 특정 회사명·이직 언급 금지.
+
+HTML 강조:
+AI 관련 → <strong style="color:#C85A35">텍스트</strong> 또는 <span style="background:#FFF3E0;padding:1px 6px;border-radius:3px;font-weight:600;color:#C85A35;font-size:13px;">키워드</span>
+SCM 관련 → <strong style="color:#175F7A">텍스트</strong> 또는 <span style="background:#E3F2F8;padding:1px 6px;border-radius:3px;font-weight:600;color:#175F7A;font-size:13px;">키워드</span>
+그 외 HTML 태그 금지. 문단 구분은 <br><br>.
 
 에디터 노트 HTML 전문(다른 말 없이):"""
     result = call_gemini(prompt).strip()
@@ -256,47 +273,89 @@ def kr_date(d):
 
 # ── 일간 HTML ──────────────────────────────────────────────
 def render_hero(a, color):
-    link = a['link']
-    hl   = esc(a['title'])
-    body = a.get('body') or esc(a['description'][:200])
-    src  = esc(a['source'])
-    return f'''<div style="border-radius:10px;overflow:hidden;border:1px solid #e8e8e8;margin-bottom:24px;">
-<a href="{link}" style="display:block;text-decoration:none;">
-  <div style="height:220px;background:{color};display:flex;align-items:flex-end;padding:20px 24px;">
-    <div>
-      <div style="font-size:10px;letter-spacing:2px;color:rgba(255,255,255,0.65);font-weight:600;margin-bottom:8px;">🌟 오늘의 하이라이트</div>
-      <div style="font-size:21px;font-weight:700;color:#fff;line-height:1.3;">{hl}</div>
-      <div style="font-size:11px;color:rgba(255,255,255,0.55);margin-top:8px;">{src}</div>
-    </div>
-  </div>
-</a>
-<div style="padding:18px 24px;background:#fff;border-top:1px solid #eee;">
-  <div style="font-size:14px;color:#444;line-height:1.8;">{body}</div>
-</div>
-</div>'''
+    link    = a['link']
+    hl      = esc(a['title'])
+    src     = esc(a['source'])
+    summary = a.get('summary') or esc(a['description'][:200])
+    insight = a.get('insight', '')
+    img     = a.get('og_image')
+    bg      = AI_BG if color == AI_COLOR else SCM_BG
+
+    if img:
+        top_block = (
+            f'<a href="{link}" style="display:block;">'
+            f'<img src="{img}" alt="" width="100%" style="display:block;max-width:100%;height:220px;object-fit:cover;"></a>'
+            f'<a href="{link}" style="display:block;text-decoration:none;">'
+            f'<div style="background:{color};padding:16px 24px;">'
+            f'<div style="font-size:12px;letter-spacing:2px;color:rgba(255,255,255,0.65);font-weight:600;margin-bottom:6px;">🌟 오늘의 하이라이트</div>'
+            f'<div style="font-size:21px;font-weight:700;color:#fff;line-height:1.3;">{hl}</div>'
+            f'<div style="font-size:13px;color:rgba(255,255,255,0.55);margin-top:6px;">{src}</div>'
+            f'</div></a>'
+        )
+    else:
+        top_block = (
+            f'<a href="{link}" style="display:block;text-decoration:none;">'
+            f'<div style="height:220px;background:{color};display:flex;align-items:flex-end;padding:20px 24px;">'
+            f'<div>'
+            f'<div style="font-size:12px;letter-spacing:2px;color:rgba(255,255,255,0.65);font-weight:600;margin-bottom:8px;">🌟 오늘의 하이라이트</div>'
+            f'<div style="font-size:21px;font-weight:700;color:#fff;line-height:1.3;">{hl}</div>'
+            f'<div style="font-size:13px;color:rgba(255,255,255,0.55);margin-top:8px;">{src}</div>'
+            f'</div></div></a>'
+        )
+
+    insight_block = (
+        f'<div style="font-size:13px;font-weight:700;color:{color};letter-spacing:0.3px;margin-top:12px;margin-bottom:5px;">인사이트</div>'
+        f'<div style="font-size:14px;color:#555;line-height:1.8;padding:10px 14px;background:{bg};border-radius:6px;">{insight}</div>'
+        if insight else ''
+    )
+
+    return (
+        f'<div style="border-radius:10px;overflow:hidden;border:1px solid #e8e8e8;margin-bottom:24px;">'
+        f'{top_block}'
+        f'<div style="padding:20px 24px;background:#fff;border-top:1px solid #eee;">'
+        f'<div style="font-size:13px;font-weight:700;color:{color};letter-spacing:0.3px;margin-bottom:5px;">핵심 요약</div>'
+        f'<div style="font-size:14px;color:#444;line-height:1.8;">{summary}</div>'
+        f'{insight_block}'
+        f'</div></div>'
+    )
 
 def render_card(a, color, placeholder_bg):
-    img  = a.get('og_image')
-    link = a['link']
-    hl   = esc(a['title'])
-    body = a.get('body') or esc(a['description'][:200])
-    src  = esc(a['source'])
-    img_block = (f'<a href="{link}" style="display:block;"><img src="{img}" alt="" width="100%" '
-                 f'style="display:block;max-width:100%;height:130px;object-fit:cover;"></a>'
-                 if img else
-                 f'<a href="{link}" style="display:block;"><div style="height:130px;background:{placeholder_bg};'
-                 f'display:flex;align-items:center;justify-content:center;">'
-                 f'<div style="text-align:center;color:#ccc;font-size:12px;">썸네일</div></div></a>')
-    return f'''<div style="margin-bottom:16px;border-radius:8px;overflow:hidden;border:1px solid #e8e8e8;">
-{img_block}
-<div style="padding:13px 14px;">
-  <a href="{link}" style="text-decoration:none;">
-    <div style="font-size:14px;font-weight:700;color:#111;line-height:1.4;margin-bottom:8px;">{hl}</div>
-  </a>
-  <div style="font-size:12px;color:#555;line-height:1.7;">{body}</div>
-  <div style="font-size:10px;color:#bbb;margin-top:10px;">{src}</div>
-</div>
-</div>'''
+    img     = a.get('og_image')
+    link    = a['link']
+    hl      = esc(a['title'])
+    src     = esc(a['source'])
+    summary = a.get('summary') or esc(a['description'][:200])
+    insight = a.get('insight', '')
+    bg      = AI_BG if color == AI_COLOR else SCM_BG
+
+    img_block = (
+        f'<a href="{link}" style="display:block;"><img src="{img}" alt="" width="100%" '
+        f'style="display:block;max-width:100%;height:130px;object-fit:cover;"></a>'
+        if img else
+        f'<a href="{link}" style="display:block;"><div style="height:130px;background:{placeholder_bg};'
+        f'display:flex;align-items:center;justify-content:center;">'
+        f'<div style="text-align:center;color:#ccc;font-size:13px;">썸네일</div></div></a>'
+    )
+
+    insight_block = (
+        f'<div style="font-size:12px;font-weight:700;color:{color};margin-top:10px;margin-bottom:4px;">인사이트</div>'
+        f'<div style="font-size:13px;color:#555;line-height:1.7;padding:8px 10px;background:{bg};border-radius:5px;">{insight}</div>'
+        if insight else ''
+    )
+
+    return (
+        f'<div style="margin-bottom:16px;border-radius:8px;overflow:hidden;border:1px solid #e8e8e8;">'
+        f'{img_block}'
+        f'<div style="padding:14px 15px;">'
+        f'<a href="{link}" style="text-decoration:none;">'
+        f'<div style="font-size:15px;font-weight:700;color:#111;line-height:1.4;margin-bottom:10px;">{hl}</div>'
+        f'</a>'
+        f'<div style="font-size:12px;font-weight:700;color:{color};margin-bottom:4px;">핵심 요약</div>'
+        f'<div style="font-size:13px;color:#444;line-height:1.7;">{summary}</div>'
+        f'{insight_block}'
+        f'<div style="font-size:12px;color:#bbb;margin-top:10px;">{src}</div>'
+        f'</div></div>'
+    )
 
 def build_html(editor_note, ai_top, scm_top, q_hits):
     ai_names = {f['name'] for f in AI_FEEDS}
@@ -316,27 +375,27 @@ def build_html(editor_note, ai_top, scm_top, q_hits):
     H = f'<body style="margin:0;padding:20px 0;background:#efefef;"><div style="{W}">'
 
     # 헤더
-    H += f'''<div style="padding:22px 32px 16px;border-bottom:2.5px solid #111;">
-  <div style="font-size:10px;letter-spacing:2.5px;color:#aaa;margin-bottom:6px;font-weight:500;">AI × SCM DAILY</div>
-  <div style="font-size:26px;font-weight:700;line-height:1.2;">☕ 굿모닝!</div>
-  <div style="font-size:13px;color:#aaa;margin-top:5px;">{kr_date(datetime.now())}</div>
-</div>'''
+    H += (f'<div style="padding:22px 32px 16px;border-bottom:2.5px solid #111;">'
+          f'<div style="font-size:12px;letter-spacing:2.5px;color:#aaa;margin-bottom:6px;font-weight:500;">AI × SCM DAILY</div>'
+          f'<div style="font-size:26px;font-weight:700;line-height:1.2;">☕ 굿모닝!</div>'
+          f'<div style="font-size:14px;color:#aaa;margin-top:5px;">{kr_date(datetime.now())}</div>'
+          f'</div>')
 
     # 에디터 노트
     if not editor_note:
         editor_note = '🤖 AI — 오늘도 AI 업계에서 흥미로운 소식들이 들어왔습니다.<br><br>📦 SCM — 물류·공급망 현장의 최신 트렌드를 확인해보세요.'
-    H += f'''<div style="padding:16px 32px;border-bottom:1px solid #eee;">
-  <div style="font-size:10px;letter-spacing:2px;color:#bbb;font-weight:600;margin-bottom:8px;">📝 오늘의 한 마디</div>
-  <div style="font-size:14px;color:#333;line-height:1.8;">{editor_note}</div>
-</div>'''
+    H += (f'<div style="padding:18px 32px;border-bottom:1px solid #eee;">'
+          f'<div style="font-size:12px;letter-spacing:2px;color:#bbb;font-weight:600;margin-bottom:10px;">📝 오늘의 한 마디</div>'
+          f'<div style="font-size:15px;color:#333;line-height:1.9;">{editor_note}</div>'
+          f'</div>')
 
     # 히어로
     H += f'<div style="padding:24px 32px 0;">{render_hero(hero, hero_color)}</div>'
 
     # 2단 (flexbox)
     def col_header(emoji, label, color):
-        return (f'<div style="font-size:11px;font-weight:700;color:{color};letter-spacing:1.5px;'
-                f'padding-bottom:10px;border-bottom:2px solid {color};margin-bottom:14px;">'
+        return (f'<div style="font-size:16px;font-weight:800;color:{color};letter-spacing:0.5px;'
+                f'padding-bottom:10px;border-bottom:2px solid {color};margin-bottom:16px;">'
                 f'{emoji} {label}</div>')
 
     H += '<div style="padding:0 32px 24px;"><div style="display:flex;gap:20px;">'
@@ -357,20 +416,20 @@ def build_html(editor_note, ai_top, scm_top, q_hits):
 
     # Quick Hits
     if q_hits:
-        H += '<div style="padding:16px 32px;background:#fafafa;border-top:1px solid #eee;">'
-        H += '<div style="font-size:10px;letter-spacing:2px;color:#aaa;font-weight:600;margin-bottom:12px;">⚡ 빠르게 보는 헤드라인</div>'
+        H += '<div style="padding:18px 32px;background:#fafafa;border-top:1px solid #eee;">'
+        H += '<div style="font-size:12px;letter-spacing:2px;color:#aaa;font-weight:600;margin-bottom:14px;">⚡ 빠르게 보는 헤드라인</div>'
         for i, a in enumerate(q_hits):
             is_ai = a['source'] in ai_names
             tc = AI_COLOR if is_ai else SCM_COLOR
             tl = 'AI' if is_ai else 'SCM'
             bd = '' if i == len(q_hits)-1 else 'border-bottom:1px solid #eee;'
-            H += (f'<div style="display:flex;align-items:baseline;gap:8px;padding:8px 0;{bd}">'
-                  f'<span style="font-size:10px;font-weight:700;color:#fff;background:{tc};'
-                  f'padding:2px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0;">{tl}</span>'
-                  f'<a href="{a["link"]}" style="font-size:13px;color:#333;text-decoration:none;line-height:1.5;">{esc(a["title"])}</a></div>')
+            H += (f'<div style="display:flex;align-items:baseline;gap:8px;padding:9px 0;{bd}">'
+                  f'<span style="font-size:11px;font-weight:700;color:#fff;background:{tc};'
+                  f'padding:2px 9px;border-radius:20px;white-space:nowrap;flex-shrink:0;">{tl}</span>'
+                  f'<a href="{a["link"]}" style="font-size:14px;color:#333;text-decoration:none;line-height:1.5;">{esc(a["title"])}</a></div>')
         H += '</div>'
 
-    H += '<div style="padding:16px 32px;border-top:1px solid #eee;text-align:center;font-size:12px;color:#ccc;">📬 좋은 하루 보내세요 ✨</div>'
+    H += '<div style="padding:18px 32px;border-top:1px solid #eee;text-align:center;font-size:13px;color:#ccc;">📬 좋은 하루 보내세요 ✨</div>'
     H += '</div></body>'
     return f'<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>{H}</html>'
 
@@ -386,53 +445,53 @@ def build_weekly_html(summary, ai_top, scm_top, top_kw, ai_cnt, scm_cnt):
     H = f'<body style="margin:0;padding:20px 0;background:#efefef;"><div style="{W}">'
 
     kw_badges = ''.join(
-        f'<span style="font-size:11px;font-weight:700;color:#fff;background:{AI_COLOR if i%2==0 else SCM_COLOR};padding:3px 10px;border-radius:20px;">{esc(kw)}</span>'
+        f'<span style="font-size:12px;font-weight:700;color:#fff;background:{AI_COLOR if i%2==0 else SCM_COLOR};padding:3px 10px;border-radius:20px;">{esc(kw)}</span>'
         for i,(kw,_) in enumerate(top_kw))
 
-    H += f'''<div style="padding:22px 32px 16px;border-bottom:2.5px solid #111;">
-  <div style="font-size:10px;letter-spacing:2.5px;color:#aaa;margin-bottom:6px;font-weight:500;">AI × SCM WEEKLY</div>
-  <div style="font-size:26px;font-weight:700;line-height:1.2;">📅 이번 주 하이라이트</div>
-  <div style="font-size:13px;color:#aaa;margin-top:5px;">{now.year}년 {now.month}월 {now.day}일 · {ai_cnt+scm_cnt}건 큐레이션</div>
-  <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;">{kw_badges}</div>
-</div>'''
+    H += (f'<div style="padding:22px 32px 16px;border-bottom:2.5px solid #111;">'
+          f'<div style="font-size:12px;letter-spacing:2.5px;color:#aaa;margin-bottom:6px;font-weight:500;">AI × SCM WEEKLY</div>'
+          f'<div style="font-size:26px;font-weight:700;line-height:1.2;">📅 이번 주 하이라이트</div>'
+          f'<div style="font-size:14px;color:#aaa;margin-top:5px;">{now.year}년 {now.month}월 {now.day}일 · {ai_cnt+scm_cnt}건 큐레이션</div>'
+          f'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;">{kw_badges}</div>'
+          f'</div>')
 
     if summary.get('summary'):
-        H += f'''<div style="padding:16px 32px;border-bottom:1px solid #eee;">
-  <div style="font-size:10px;letter-spacing:2px;color:#bbb;font-weight:600;margin-bottom:8px;">📝 이번 주 에디터 노트</div>
-  <div style="font-size:14px;color:#333;line-height:1.8;">{esc(summary["summary"])}</div>
-</div>'''
+        H += (f'<div style="padding:18px 32px;border-bottom:1px solid #eee;">'
+              f'<div style="font-size:12px;letter-spacing:2px;color:#bbb;font-weight:600;margin-bottom:10px;">📝 이번 주 에디터 노트</div>'
+              f'<div style="font-size:15px;color:#333;line-height:1.9;">{esc(summary["summary"])}</div>'
+              f'</div>')
 
     H += '<div style="padding:24px 32px;border-bottom:1px solid #eee;">'
-    H += '<div style="font-size:11px;font-weight:700;color:#111;letter-spacing:1.5px;margin-bottom:16px;">🏆 이번 주 픽</div>'
+    H += '<div style="font-size:16px;font-weight:800;color:#111;letter-spacing:0.5px;margin-bottom:16px;">🏆 이번 주 픽</div>'
     H += '<div style="display:flex;gap:20px;">'
-    H += f'''<div style="flex:1;min-width:0;padding:18px;border-radius:8px;border:1px solid #eee;border-top:3px solid {AI_COLOR};">
-  <div style="font-size:10px;font-weight:700;color:{AI_COLOR};letter-spacing:1px;margin-bottom:10px;">🥇 AI 픽 오브 더 위크</div>
-  <div style="font-size:15px;font-weight:700;color:#111;line-height:1.4;margin-bottom:8px;">{esc(summary.get("ai_pick_title",""))}</div>
-  <div style="font-size:13px;color:#666;line-height:1.6;">{esc(summary.get("ai_pick_reason",""))}</div>
-</div>'''
-    H += f'''<div style="flex:1;min-width:0;padding:18px;border-radius:8px;border:1px solid #eee;border-top:3px solid {SCM_COLOR};">
-  <div style="font-size:10px;font-weight:700;color:{SCM_COLOR};letter-spacing:1px;margin-bottom:10px;">🥇 SCM 픽 오브 더 위크</div>
-  <div style="font-size:15px;font-weight:700;color:#111;line-height:1.4;margin-bottom:8px;">{esc(summary.get("scm_pick_title",""))}</div>
-  <div style="font-size:13px;color:#666;line-height:1.6;">{esc(summary.get("scm_pick_reason",""))}</div>
-</div>'''
+    H += (f'<div style="flex:1;min-width:0;padding:18px;border-radius:8px;border:1px solid #eee;border-top:3px solid {AI_COLOR};">'
+          f'<div style="font-size:12px;font-weight:700;color:{AI_COLOR};letter-spacing:1px;margin-bottom:10px;">🥇 AI 픽 오브 더 위크</div>'
+          f'<div style="font-size:16px;font-weight:700;color:#111;line-height:1.4;margin-bottom:8px;">{esc(summary.get("ai_pick_title",""))}</div>'
+          f'<div style="font-size:14px;color:#666;line-height:1.6;">{esc(summary.get("ai_pick_reason",""))}</div>'
+          f'</div>')
+    H += (f'<div style="flex:1;min-width:0;padding:18px;border-radius:8px;border:1px solid #eee;border-top:3px solid {SCM_COLOR};">'
+          f'<div style="font-size:12px;font-weight:700;color:{SCM_COLOR};letter-spacing:1px;margin-bottom:10px;">🥇 SCM 픽 오브 더 위크</div>'
+          f'<div style="font-size:16px;font-weight:700;color:#111;line-height:1.4;margin-bottom:8px;">{esc(summary.get("scm_pick_title",""))}</div>'
+          f'<div style="font-size:14px;color:#666;line-height:1.6;">{esc(summary.get("scm_pick_reason",""))}</div>'
+          f'</div>')
     H += '</div></div>'
 
-    H += '<div style="padding:16px 32px;background:#fafafa;border-top:1px solid #eee;">'
-    H += '<div style="font-size:10px;letter-spacing:2px;color:#aaa;font-weight:600;margin-bottom:14px;">📋 이번 주 전체 기사</div>'
+    H += '<div style="padding:18px 32px;background:#fafafa;border-top:1px solid #eee;">'
+    H += '<div style="font-size:12px;letter-spacing:2px;color:#aaa;font-weight:600;margin-bottom:14px;">📋 이번 주 전체 기사</div>'
     for a in ai_top + scm_top:
         is_ai = a['source'] in ai_names
         tc = AI_COLOR if is_ai else SCM_COLOR
         tl = 'AI' if is_ai else 'SCM'
         H += (f'<div style="padding:9px 0;border-bottom:1px solid #eee;display:flex;align-items:baseline;gap:8px;">'
-              f'<span style="font-size:10px;font-weight:700;color:#fff;background:{tc};padding:2px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0;">{tl}</span>'
-              f'<a href="{a["link"]}" style="font-size:13px;color:#333;text-decoration:none;line-height:1.5;">{esc(a["title"])}</a></div>')
-    H += f'''<div style="margin-top:16px;padding:14px 16px;background:#fff;border-radius:8px;border:1px solid #eee;display:flex;gap:24px;">
-  <div><div style="font-size:11px;color:#aaa;margin-bottom:4px;">총 기사</div><div style="font-size:20px;font-weight:700;">{ai_cnt+scm_cnt}건</div></div>
-  <div><div style="font-size:11px;color:{AI_COLOR};margin-bottom:4px;">AI</div><div style="font-size:20px;font-weight:700;">{ai_cnt}건</div></div>
-  <div><div style="font-size:11px;color:{SCM_COLOR};margin-bottom:4px;">SCM</div><div style="font-size:20px;font-weight:700;">{scm_cnt}건</div></div>
-</div>'''
+              f'<span style="font-size:11px;font-weight:700;color:#fff;background:{tc};padding:2px 9px;border-radius:20px;white-space:nowrap;flex-shrink:0;">{tl}</span>'
+              f'<a href="{a["link"]}" style="font-size:14px;color:#333;text-decoration:none;line-height:1.5;">{esc(a["title"])}</a></div>')
+    H += (f'<div style="margin-top:16px;padding:14px 16px;background:#fff;border-radius:8px;border:1px solid #eee;display:flex;gap:24px;">'
+          f'<div><div style="font-size:12px;color:#aaa;margin-bottom:4px;">총 기사</div><div style="font-size:22px;font-weight:700;">{ai_cnt+scm_cnt}건</div></div>'
+          f'<div><div style="font-size:12px;color:{AI_COLOR};margin-bottom:4px;">AI</div><div style="font-size:22px;font-weight:700;">{ai_cnt}건</div></div>'
+          f'<div><div style="font-size:12px;color:{SCM_COLOR};margin-bottom:4px;">SCM</div><div style="font-size:22px;font-weight:700;">{scm_cnt}건</div></div>'
+          f'</div>')
     H += '</div>'
-    H += '<div style="padding:16px 32px;border-top:1px solid #eee;text-align:center;font-size:12px;color:#ccc;">📬 좋은 주말 보내세요 ✨</div>'
+    H += '<div style="padding:18px 32px;border-top:1px solid #eee;text-align:center;font-size:13px;color:#ccc;">📬 좋은 주말 보내세요 ✨</div>'
     H += '</div></body>'
     return f'<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>{H}</html>'
 
