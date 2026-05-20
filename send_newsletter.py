@@ -181,17 +181,26 @@ def summarize_batch(articles, is_ai=True):
     bg    = AI_BG    if is_ai else SCM_BG
     items = '\n'.join([f'{i+1}. 제목: {a["title"]}\n   내용: {a["description"][:300]}'
                        for i, a in enumerate(articles)])
-    prompt = f"""다음 {len(articles)}개 기사를 K-brand FBA SCM 실무자를 위한 뉴스레터 형식으로 정리해줘.
-모든 기사는 반드시 한국어로 작성. 영문 기사는 한국어로 의역.
+    prompt = f"""다음 {len(articles)}개 기사를 K-brand FBA SCM 실무자를 위한 뉴스레터로 정리해줘.
+모든 기사 반드시 한국어로. 영문은 한국어로 의역.
 
 각 기사마다 두 필드:
-- summary: 이 기사의 핵심 내용 2문장. 친절한 존댓말, 이모지 1개. 독자가 쉽게 이해할 수 있게.
-- insight: K-brand FBA 이커머스 또는 SCM 물류 실무에 바로 활용할 수 있는 액션 포인트 1~2문장. 관련성이 없으면 빈 문자열 "".
 
-HTML 강조 사용법 (summary와 insight 모두):
-- 핵심 내용: <strong style="color:{color}">강조할 텍스트</strong>
-- 키워드 배지: <span style="background:{bg};padding:1px 5px;border-radius:3px;font-weight:600;font-size:12px;color:{color}">키워드</span>
-- 위 두 가지 태그만 사용. 다른 HTML 태그 금지.
+■ summary
+기사 핵심 내용을 2문장으로. 친절한 에디터 말투, 존댓말, 이모지 1~2개.
+
+■ insight
+K-brand FBA 이커머스 또는 SCM 물류 실무에서 바로 쓸 수 있는 인사이트를 에디터 말투로 1~2문장.
+이모지 1개 포함. 핵심 액션이나 키워드를 HTML 강조로 눈에 띄게 표현.
+관련성이 없으면 빈 문자열 "".
+
+HTML 강조 규칙 (summary·insight 모두 적용):
+- 굵은 색 강조: <strong style="color:{color}">강조 텍스트</strong>
+- 키워드 배지: <span style="background:{bg};padding:1px 6px;border-radius:3px;font-weight:600;font-size:12px;color:{color}">키워드</span>
+- 위 두 태그만 사용. 다른 HTML 태그 절대 금지.
+
+insight 예시 (이 스타일을 따라줘):
+"이제 AI가 단순 보조를 넘어 <strong style="color:{color}">업무 자체를 대신 처리</strong>하는 시대가 됐습니다 💼 <span style="background:{bg};padding:1px 6px;border-radius:3px;font-weight:600;font-size:12px;color:{color}">발주서 자동화</span>에도 바로 응용할 수 있을 것 같아요!"
 
 {items}
 
