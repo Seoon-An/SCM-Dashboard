@@ -8,48 +8,38 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.x/dist/tabler-icons.min.css">
 <style>
-:root{
-  --bg:#ffffff;--bg2:#f8f4ef;--bg3:#f0ebe3;
-  --txt:#111827;--txt2:#6b7280;--txt3:#aaa;
-  --bdr:rgba(0,0,0,0.08);--bdr2:rgba(0,0,0,0.14);
-  --r:8px;--rl:12px;
-  --coral:#E97451;--teal:#1E7E9E;
-}
+:root{--bg:#fff;--bg2:#f8f4ef;--bg3:#f0ebe3;--txt:#111827;--txt2:#6b7280;--txt3:#aaa;--bdr:rgba(0,0,0,0.08);--bdr2:rgba(0,0,0,0.14);--r:8px;--rl:12px;--coral:#E97451;--teal:#1E7E9E;}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'DM Sans',sans-serif;background:var(--bg2);color:var(--txt);min-height:100vh;}
 .layout{display:flex;min-height:100vh;}
-.sidebar{width:220px;flex-shrink:0;background:#18181b;display:flex;flex-direction:column;position:fixed;height:100vh;overflow-y:auto;}
+.sidebar{width:220px;flex-shrink:0;background:#18181b;display:flex;flex-direction:column;position:fixed;height:100vh;}
 .sb-logo{padding:22px 20px 18px;border-bottom:1px solid rgba(255,255,255,.07);}
-.sb-logo .title{font-size:14px;font-weight:600;color:#fff;letter-spacing:-.2px;}
-.sb-logo .sub{font-size:11px;color:rgba(255,255,255,.35);margin-top:3px;}
+.sb-logo .t{font-size:14px;font-weight:600;color:#fff;}
+.sb-logo .s{font-size:11px;color:rgba(255,255,255,.3);margin-top:3px;}
 .sb-nav{padding:12px 8px;flex:1;}
-.nb{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border:none;background:transparent;border-radius:var(--r);font-size:13px;font-family:'DM Sans',sans-serif;color:rgba(255,255,255,.45);cursor:pointer;text-align:left;transition:background .15s,color .15s;}
+.nb{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border:none;background:transparent;border-radius:var(--r);font-size:13px;font-family:'DM Sans',sans-serif;color:rgba(255,255,255,.4);cursor:pointer;text-align:left;transition:all .15s;}
 .nb:hover{background:rgba(255,255,255,.06);color:rgba(255,255,255,.8);}
 .nb.on{background:rgba(233,116,81,.15);color:#E97451;}
-.nb.on i{color:#E97451;}
 .nb i{font-size:17px;}
 .sb-footer{padding:14px 20px;border-top:1px solid rgba(255,255,255,.07);}
-.sb-footer span{font-size:11px;color:rgba(255,255,255,.2);}
-.main{margin-left:220px;flex:1;padding:28px 32px;min-height:100vh;}
-.sec{display:none;animation:fadeIn .2s ease;}
-.sec.on{display:block;}
-@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
-.page-title{font-size:20px;font-weight:600;color:var(--txt);margin-bottom:4px;}
-.page-sub{font-size:13px;color:var(--txt2);margin-bottom:24px;}
+.sb-footer span{font-size:11px;color:rgba(255,255,255,.15);}
+.main{margin-left:220px;flex:1;padding:28px 32px;}
+.sec{display:none;}
+.sec.on{display:block;animation:fi .2s ease;}
+@keyframes fi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.pt{font-size:20px;font-weight:600;margin-bottom:4px;}
+.ps{font-size:13px;color:var(--txt2);margin-bottom:24px;}
 .card{background:var(--bg);border:1px solid var(--bdr);border-radius:var(--rl);padding:18px 22px;}
-.ctitle{font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--txt3);text-transform:uppercase;margin-bottom:14px;}
-.mcard{background:var(--bg2);border-radius:var(--r);padding:14px 16px;}
-.mcard .lbl{font-size:12px;color:var(--txt2);margin-bottom:4px;}
-.mcard .val{font-size:22px;font-weight:600;color:var(--txt);}
-.mcard .val .unit{font-size:13px;font-weight:400;color:var(--txt2);}
-.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;}
-.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;}
+.ct{font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--txt3);text-transform:uppercase;margin-bottom:14px;}
+.mc{background:var(--bg2);border-radius:var(--r);padding:14px 16px;}
+.g2{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-bottom:14px;}
+.g3{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;}
 .tag{display:inline-flex;align-items:center;padding:4px 12px;border-radius:20px;font-size:12px;background:var(--bg2);border:1px solid var(--bdr2);color:var(--txt2);}
 label.fl{display:block;font-size:12px;font-weight:500;color:var(--txt2);margin-bottom:5px;}
 input[type=text],input[type=email],input[type=password]{width:100%;padding:9px 12px;border:1px solid var(--bdr2);border-radius:var(--r);font-size:13px;font-family:'DM Sans',sans-serif;background:var(--bg2);color:var(--txt);outline:none;transition:border .15s;}
-input:focus{border-color:var(--coral);}
+input:focus{border-color:var(--coral);background:var(--bg);}
 .chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px 3px 12px;border-radius:20px;font-size:12px;border:1px solid var(--bdr2);background:var(--bg2);color:var(--txt2);}
-.xb{cursor:pointer;font-size:14px;line-height:1;color:var(--txt3);background:none;border:none;padding:0 0 0 2px;font-family:inherit;}
+.xb{cursor:pointer;font-size:14px;line-height:1;color:var(--txt3);background:none;border:none;padding:0;font-family:inherit;}
 .xb:hover{color:var(--coral);}
 .chips-area{display:flex;flex-wrap:wrap;gap:6px;padding:8px 10px;border:1px solid var(--bdr2);border-radius:var(--r);min-height:44px;align-items:center;background:var(--bg2);}
 .tog{position:relative;display:inline-block;width:36px;height:20px;flex-shrink:0;}
@@ -62,170 +52,144 @@ input:focus{border-color:var(--coral);}
 .frow{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--bdr);}
 .frow:last-child{border-bottom:none;}
 .frow span{font-size:13px;color:var(--txt2);}
-.nbtn{width:28px;height:28px;border-radius:50%;border:1px solid var(--bdr2);background:var(--bg);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;color:var(--txt2);transition:border .15s,color .15s;}
+.nbtn{width:28px;height:28px;border-radius:50%;border:1px solid var(--bdr2);background:var(--bg);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;color:var(--txt2);transition:all .15s;}
 .nbtn:hover{border-color:var(--coral);color:var(--coral);}
-.vol-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;}
-.vol-ctrl{display:flex;align-items:center;gap:10px;}
-.vol-val{font-size:14px;font-weight:600;min-width:22px;text-align:center;}
-.btn-row{display:flex;gap:10px;margin-top:4px;}
+.vrow{display:flex;align-items:center;justify-content:space-between;padding:6px 0;}
+.vc{display:flex;align-items:center;gap:10px;}
+.vv{font-size:14px;font-weight:600;min-width:22px;text-align:center;}
+.btn-row{display:flex;gap:10px;margin-top:14px;}
 .btn{flex:1;padding:12px;border-radius:var(--r);font-size:13px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:opacity .15s;}
 .btn:hover{opacity:.88;}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
 .btn-sec{background:var(--bg2);border:1px solid var(--bdr2);color:var(--txt);}
-.btn-pri{background:var(--coral);border:none;color:#fff;}
-.status-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;}
-.stag{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:20px;font-size:11px;background:var(--bg2);border:1px solid var(--bdr);color:var(--txt2);}
+.btn-teal{background:var(--teal);border:none;color:#fff;}
 .msg{font-size:12px;color:var(--txt3);min-height:18px;text-align:center;margin-top:8px;}
-.proj-card{background:var(--bg);border:1px solid var(--bdr);border-radius:var(--rl);padding:16px 20px;border-left:3px solid var(--coral);}
-.proj-card.teal{border-left-color:var(--teal);}
-.proj-card.dark{border-left-color:#374151;}
-.coming-card{background:var(--bg);border:1px solid var(--bdr);border-radius:var(--rl);padding:52px 24px;text-align:center;}
-@media(max-width:640px){
-  .sidebar{width:64px;}
-  .sb-logo .sub,.nb span,.sb-footer{display:none;}
-  .nb{justify-content:center;padding:12px;}
-  .main{margin-left:64px;padding:20px 16px;}
-}
+.stag{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:20px;font-size:11px;background:var(--bg2);border:1px solid var(--bdr);color:var(--txt2);}
+.pj{background:var(--bg);border:1px solid var(--bdr);border-radius:var(--rl);padding:16px 20px;border-left:3px solid var(--coral);}
+.pj.t{border-left-color:var(--teal);}
+.pj.d{border-left-color:#374151;}
+.coming{background:var(--bg);border:1px solid var(--bdr);border-radius:var(--rl);padding:52px 24px;text-align:center;}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;display:inline-block;}
+.dot.ok{background:#22c55e;}
+.dot.no{background:#f59e0b;}
+.sync-banner{background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r);padding:10px 14px;font-size:12px;color:var(--txt2);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+@media(max-width:640px){.sidebar{width:64px;}.sb-logo .s,.nb span,.sb-footer{display:none;}.nb{justify-content:center;padding:12px;}.main{margin-left:64px;padding:20px 16px;}}
 </style>
 </head>
 <body>
 <div class="layout">
-
-  <!-- SIDEBAR -->
   <nav class="sidebar">
-    <div class="sb-logo">
-      <div class="title">SCM Dashboard</div>
-      <div class="sub">서온</div>
-    </div>
+    <div class="sb-logo"><div class="t">SCM Dashboard</div><div class="s">서온</div></div>
     <div class="sb-nav">
       <button class="nb" id="n0" onclick="show(0)"><i class="ti ti-user"></i><span>포폴 소개</span></button>
       <button class="nb" id="n1" onclick="show(1)"><i class="ti ti-chart-bar"></i><span>SCM Insight</span></button>
       <button class="nb on" id="n2" onclick="show(2)"><i class="ti ti-mail"></i><span>AI × SCM 메일</span></button>
+      <button class="nb" id="n3" onclick="show(3)"><i class="ti ti-settings"></i><span>GitHub 연동</span></button>
     </div>
-    <div class="sb-footer"><span>v1.0</span></div>
+    <div class="sb-footer"><span>v2.0</span></div>
   </nav>
 
-  <!-- MAIN -->
   <main class="main">
 
     <!-- 포폴 소개 -->
     <section class="sec" id="s0">
-      <div class="page-title">포폴 소개</div>
-      <div class="page-sub">SCM Operations Manager · 이공이공</div>
-
-      <div class="grid3" style="margin-bottom:20px;">
-        <div class="mcard"><div class="lbl">SCM 경력</div><div class="val">3<span class="unit">년+</span></div></div>
-        <div class="mcard"><div class="lbl">국제 자격증</div><div class="val">2<span class="unit">개</span></div></div>
-        <div class="mcard"><div class="lbl">포트폴리오 프로젝트</div><div class="val">3<span class="unit">건</span></div></div>
+      <div class="pt">포폴 소개</div>
+      <div class="ps">SCM Operations Manager · 이공이공</div>
+      <div class="g3" style="margin-bottom:20px;">
+        <div class="mc"><div style="font-size:12px;color:var(--txt2);">SCM 경력</div><div style="font-size:22px;font-weight:600;margin-top:4px;">3<span style="font-size:14px;color:var(--txt2);">년+</span></div></div>
+        <div class="mc"><div style="font-size:12px;color:var(--txt2);">국제 자격증</div><div style="font-size:22px;font-weight:600;margin-top:4px;">2<span style="font-size:14px;color:var(--txt2);">개</span></div></div>
+        <div class="mc"><div style="font-size:12px;color:var(--txt2);">포트폴리오</div><div style="font-size:22px;font-weight:600;margin-top:4px;">3<span style="font-size:14px;color:var(--txt2);">건</span></div></div>
       </div>
-
       <div style="display:grid;gap:10px;margin-bottom:20px;">
-        <div class="proj-card">
-          <div style="font-size:14px;font-weight:600;margin-bottom:4px;">Nestlé Korea — 베트남 공급 중단 대응</div>
-          <div style="font-size:13px;color:var(--txt2);">글로벌 대체 소싱 전략 수립 · 리드타임 50% 단축 · S&OP 사이클 내 실시간 대응</div>
-        </div>
-        <div class="proj-card teal">
-          <div style="font-size:14px;font-weight:600;margin-bottom:4px;">Baros — LETUS 통합 배송 대시보드</div>
-          <div style="font-size:13px;color:var(--txt2);">전국 파트너사 인력·차량 실시간 현황 자동화 · 업무량 95.8% 절감</div>
-        </div>
-        <div class="proj-card dark">
-          <div style="font-size:14px;font-weight:600;margin-bottom:4px;">Baros — ERP 적재 이슈 관리 시스템</div>
-          <div style="font-size:13px;color:var(--txt2);">자동화 처리 시스템 구축 · 월 70시간 절감 · 오류율 대폭 감소</div>
-        </div>
+        <div class="pj"><div style="font-size:14px;font-weight:600;margin-bottom:4px;">Nestlé Korea — 베트남 공급 중단 대응</div><div style="font-size:13px;color:var(--txt2);">글로벌 대체 소싱 전략 · 리드타임 50% 단축 · S&amp;OP 내 실시간 대응</div></div>
+        <div class="pj t"><div style="font-size:14px;font-weight:600;margin-bottom:4px;">Baros — LETUS 통합 배송 대시보드</div><div style="font-size:13px;color:var(--txt2);">전국 파트너사 인력·차량 현황 자동화 · 업무량 95.8% 절감</div></div>
+        <div class="pj d"><div style="font-size:14px;font-weight:600;margin-bottom:4px;">Baros — ERP 적재 이슈 관리 시스템</div><div style="font-size:13px;color:var(--txt2);">처리 자동화 · 월 70시간 절감 · 오류율 대폭 감소</div></div>
       </div>
-
       <div style="display:flex;flex-wrap:wrap;gap:7px;">
-        <span class="tag">SAP MM</span><span class="tag">S&OP</span><span class="tag">FBA 운영</span>
-        <span class="tag">AI 자동화</span><span class="tag">수요예측</span><span class="tag">Apps Script</span>
-        <span class="tag">물류관리사</span><span class="tag">국제무역사 1급</span><span class="tag">인하대 물류·산업공학</span>
+        <span class="tag">SAP MM</span><span class="tag">S&amp;OP</span><span class="tag">FBA 운영</span><span class="tag">AI 자동화</span><span class="tag">수요예측</span><span class="tag">물류관리사</span><span class="tag">국제무역사 1급</span>
       </div>
     </section>
 
     <!-- SCM Insight -->
     <section class="sec" id="s1">
-      <div class="page-title">SCM Insight</div>
-      <div class="page-sub">FBA 운영 데이터 기반 SCM 분석 도구 — 개발 중</div>
-
-      <div class="coming-card" style="margin-bottom:20px;">
+      <div class="pt">SCM Insight</div>
+      <div class="ps">FBA 운영 데이터 기반 SCM 분석 — 개발 중</div>
+      <div class="coming" style="margin-bottom:20px;">
         <i class="ti ti-chart-arrows" style="font-size:40px;color:var(--txt3);"></i>
         <div style="font-size:16px;font-weight:600;margin-top:14px;">준비 중입니다</div>
-        <div style="font-size:13px;color:var(--txt2);margin-top:6px;max-width:360px;margin-left:auto;margin-right:auto;">Amazon FBA 판매 데이터를 연동해 수요예측, 재고 최적화, 물류비 절감 인사이트를 제공하는 도구를 만들고 있어요</div>
+        <div style="font-size:13px;color:var(--txt2);margin-top:6px;max-width:360px;margin-left:auto;margin-right:auto;">Amazon FBA 판매 데이터를 연동해 수요예측·재고 최적화·물류비 절감 인사이트를 제공하는 도구를 만들고 있어요</div>
       </div>
-
-      <div class="grid3">
-        <div class="mcard">
-          <div style="font-size:13px;font-weight:600;margin-bottom:6px;color:var(--txt);"><i class="ti ti-trending-up" style="color:var(--coral);"></i> 수요예측</div>
-          <div style="font-size:12px;color:var(--txt2);">Amazon 판매 이력 기반 수요 예측 모델</div>
-        </div>
-        <div class="mcard">
-          <div style="font-size:13px;font-weight:600;margin-bottom:6px;color:var(--txt);"><i class="ti ti-box" style="color:var(--teal);"></i> 재고 최적화</div>
-          <div style="font-size:12px;color:var(--txt2);">FBA 재고 수준 자동 모니터링 및 알림</div>
-        </div>
-        <div class="mcard">
-          <div style="font-size:13px;font-weight:600;margin-bottom:6px;color:var(--txt);"><i class="ti ti-coin"></i> 물류비 트래킹</div>
-          <div style="font-size:12px;color:var(--txt2);">카테고리별 물류비 분석 및 절감 포인트</div>
-        </div>
+      <div class="g3">
+        <div class="mc"><div style="font-size:13px;font-weight:600;margin-bottom:6px;"><i class="ti ti-trending-up" style="color:var(--coral);"></i> 수요예측</div><div style="font-size:12px;color:var(--txt2);">Amazon 판매 이력 기반 수요 예측</div></div>
+        <div class="mc"><div style="font-size:13px;font-weight:600;margin-bottom:6px;"><i class="ti ti-box" style="color:var(--teal);"></i> 재고 최적화</div><div style="font-size:12px;color:var(--txt2);">FBA 재고 수준 자동 모니터링</div></div>
+        <div class="mc"><div style="font-size:13px;font-weight:600;margin-bottom:6px;"><i class="ti ti-coin"></i> 물류비 트래킹</div><div style="font-size:12px;color:var(--txt2);">카테고리별 물류비 분석 및 절감</div></div>
       </div>
     </section>
 
     <!-- AI × SCM 메일 관리 -->
     <section class="sec on" id="s2">
-      <div class="status-bar">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
         <div>
-          <div class="page-title">AI × SCM 메일 관리</div>
-          <div class="page-sub" style="margin-bottom:0;">매일 아침 AI·SCM 인사이트 정리 뉴스레터 자동 발송</div>
+          <div class="pt">AI × SCM 메일 관리</div>
+          <div class="ps" style="margin:0;">매일 아침 AI·SCM 인사이트 뉴스레터 자동 발송</div>
         </div>
-        <span class="stag"><i class="ti ti-circle-check" style="font-size:13px;color:var(--teal);"></i><span id="sttext">설정 로드 중...</span></span>
+        <span class="stag"><span class="dot" id="syncDot"></span><span id="syncTxt">연동 확인 중...</span></span>
       </div>
 
-      <div class="grid2" style="margin-bottom:14px;">
+      <div id="syncBanner" class="sync-banner" style="display:none;">
+        <i class="ti ti-alert-triangle" style="color:#f59e0b;"></i>
+        <span>GitHub 연동이 필요합니다. <button onclick="show(3)" style="background:none;border:none;color:var(--coral);cursor:pointer;font-family:inherit;font-size:12px;text-decoration:underline;">⚙️ 연동 설정</button>에서 토큰을 입력해주세요.</span>
+      </div>
 
-        <!-- 발송 설정 -->
+      <!-- 키워드 + 분량 -->
+      <div class="g2">
         <div class="card">
-          <div class="ctitle">발송 설정</div>
-          <div style="margin-bottom:12px;"><label class="fl">받는 이메일</label><input type="email" id="toEmail" placeholder="your_id@naver.com"></div>
-          <div style="margin-bottom:12px;"><label class="fl">Gemini API Key</label><input type="password" id="apiKey" placeholder="AIza..."></div>
-
-        <!-- 관심 키워드 -->
-        <div class="card">
-          <div class="ctitle">관심 키워드</div>
-          <div style="font-size:11px;color:var(--txt3);margin-bottom:8px;">에디터 노트·인사이트 생성에 반영됩니다 · Enter로 추가</div>
+          <div class="ct">관심 키워드</div>
+          <div style="font-size:11px;color:var(--txt3);margin-bottom:8px;">에디터 노트·인사이트 생성에 반영 · Enter로 추가</div>
           <div class="chips-area" id="chipsArea"></div>
           <input type="text" id="kInput" placeholder="키워드 입력 후 Enter" style="margin-top:8px;">
         </div>
-
-      </div>
-
-      <div class="grid2" style="margin-bottom:14px;">
-
-        <!-- AI 피드 -->
         <div class="card">
-          <div class="ctitle" style="color:var(--coral);">🤖 AI 피드</div>
-          <div id="aiFeedList"></div>
-        </div>
-
-        <!-- SCM 피드 -->
-        <div class="card">
-          <div class="ctitle" style="color:var(--teal);">📦 SCM 피드</div>
-          <div id="scmFeedList"></div>
-        </div>
-
-      </div>
-
-      <!-- 분량 -->
-      <div class="card" style="margin-bottom:14px;">
-        <div class="ctitle">분량 설정</div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;">
-          <div class="vol-row"><span style="font-size:13px;color:var(--txt2);">AI 카드 수</span><div class="vol-ctrl"><button class="nbtn" onclick="adj('maxAi',-1)">−</button><span class="vol-val" id="maxAi">4</span><button class="nbtn" onclick="adj('maxAi',1)">+</button></div></div>
-          <div class="vol-row"><span style="font-size:13px;color:var(--txt2);">SCM 카드 수</span><div class="vol-ctrl"><button class="nbtn" onclick="adj('maxScm',-1)">−</button><span class="vol-val" id="maxScm">4</span><button class="nbtn" onclick="adj('maxScm',1)">+</button></div></div>
-          <div class="vol-row"><span style="font-size:13px;color:var(--txt2);">Quick Hits</span><div class="vol-ctrl"><button class="nbtn" onclick="adj('maxQh',-1)">−</button><span class="vol-val" id="maxQh">12</span><button class="nbtn" onclick="adj('maxQh',1)">+</button></div></div>
+          <div class="ct">분량 설정</div>
+          <div class="vrow"><span style="font-size:13px;color:var(--txt2);">AI 카드 수</span><div class="vc"><button class="nbtn" onclick="adj('maxAiCards',-1)">−</button><span class="vv" id="maxAiCards">4</span><button class="nbtn" onclick="adj('maxAiCards',1)">+</button></div></div>
+          <div class="vrow"><span style="font-size:13px;color:var(--txt2);">SCM 카드 수</span><div class="vc"><button class="nbtn" onclick="adj('maxScmCards',-1)">−</button><span class="vv" id="maxScmCards">4</span><button class="nbtn" onclick="adj('maxScmCards',1)">+</button></div></div>
+          <div class="vrow"><span style="font-size:13px;color:var(--txt2);">Quick Hits</span><div class="vc"><button class="nbtn" onclick="adj('maxQuickHits',-1)">−</button><span class="vv" id="maxQuickHits">12</span><button class="nbtn" onclick="adj('maxQuickHits',1)">+</button></div></div>
         </div>
       </div>
 
+      <!-- 피드 -->
+      <div class="g2">
+        <div class="card"><div class="ct" style="color:var(--coral);">🤖 AI 피드</div><div id="aiFeedList"></div></div>
+        <div class="card"><div class="ct" style="color:var(--teal);">📦 SCM 피드</div><div id="scmFeedList"></div></div>
+      </div>
+
+      <!-- 버튼 -->
       <div class="btn-row">
-        <button class="btn btn-sec" onclick="saveAll()"><i class="ti ti-device-floppy"></i> 설정 저장</button>
-        <button class="btn btn-pri" onclick="doTest()" id="testBtn"><i class="ti ti-send"></i> 테스트 발송</button>
+        <button class="btn btn-sec" onclick="saveToGithub()"><i class="ti ti-device-floppy"></i> 저장 (GitHub 반영)</button>
+        <button class="btn btn-teal" id="testBtn" onclick="triggerWorkflow()"><i class="ti ti-player-play"></i> 지금 바로 발송</button>
       </div>
-      <div class="msg" id="msg"></div>
+      <div class="msg" id="msg2"></div>
+    </section>
+
+    <!-- GitHub 연동 설정 -->
+    <section class="sec" id="s3">
+      <div class="pt">GitHub 연동 설정</div>
+      <div class="ps">대시보드에서 설정을 저장하고 발송을 트리거하려면 GitHub 토큰이 필요합니다</div>
+      <div class="card" style="max-width:560px;">
+        <div class="ct">Personal Access Token (PAT)</div>
+        <div style="font-size:12px;color:var(--txt2);margin-bottom:16px;line-height:1.6;">
+          GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token<br>
+          권한: <strong>Contents (Read &amp; Write)</strong>, <strong>Actions (Write)</strong>
+        </div>
+        <div style="margin-bottom:12px;"><label class="fl">GitHub 사용자명</label><input type="text" id="ghOwner" placeholder="Seoon-An"></div>
+        <div style="margin-bottom:12px;"><label class="fl">Repository 이름</label><input type="text" id="ghRepo" placeholder="SCM-Dashboard"></div>
+        <div style="margin-bottom:16px;"><label class="fl">Personal Access Token</label><input type="password" id="ghPat" placeholder="github_pat_..."></div>
+        <div class="btn-row">
+          <button class="btn btn-sec" onclick="savePat()"><i class="ti ti-device-floppy"></i> 저장</button>
+          <button class="btn btn-teal" onclick="testConnection()"><i class="ti ti-plug"></i> 연결 테스트</button>
+        </div>
+        <div class="msg" id="msg3"></div>
+      </div>
     </section>
 
   </main>
@@ -234,98 +198,119 @@ input:focus{border-color:var(--coral);}
 <script>
 const AI_FEEDS=['TechCrunch AI','The Verge AI','VentureBeat AI','The Decoder','AI타임스','인공지능신문'];
 const SCM_FEEDS=['Supply Chain Dive','FreightWaves','Modern Materials Handling','물류신문'];
-const LS='scm_dash_v1';
 
-let S={
-  email:'',apiKey:'',asUrl:'',
-  keywords:['수요예측','재고최적화','물류비 절감','AI agent'],
-  disabled:[],maxAi:4,maxScm:4,maxQh:12
-};
+let cfg={keywords:['수요예측','재고최적화','물류비 절감','AI agent'],disabledFeeds:[],maxAiCards:4,maxScmCards:4,maxQuickHits:12,topPerFeed:2};
 
-function show(i){
-  [0,1,2].forEach(j=>{
-    document.getElementById('s'+j).classList.toggle('on',j===i);
-    document.getElementById('n'+j).classList.toggle('on',j===i);
-  });
+function show(i){[0,1,2,3].forEach(j=>{document.getElementById('s'+j).classList.toggle('on',j===i);document.getElementById('n'+j).classList.toggle('on',j===i);});}
+
+function getGh(){return{owner:localStorage.getItem('gh_owner')||'',repo:localStorage.getItem('gh_repo')||'',pat:localStorage.getItem('gh_pat')||''};}
+
+async function loadConfig(){
+  const {owner,repo}=getGh();
+  if(!owner||!repo){setSyncStatus(false);return;}
+  try{
+    const r=await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/main/config.json?t=${Date.now()}`);
+    if(!r.ok)throw new Error();
+    cfg=await r.json();
+    document.getElementById('maxAiCards').textContent=cfg.maxAiCards||4;
+    document.getElementById('maxScmCards').textContent=cfg.maxScmCards||4;
+    document.getElementById('maxQuickHits').textContent=cfg.maxQuickHits||12;
+    renderChips();renderFeeds();
+    setSyncStatus(true);
+  }catch(e){setSyncStatus(false);}
 }
 
-function load(){
-  try{const d=localStorage.getItem(LS);if(d)S={...S,...JSON.parse(d)};}catch(e){}
-  document.getElementById('toEmail').value=S.email||'';
-  document.getElementById('apiKey').value=S.apiKey?'••••••••':'';
-  document.getElementById('asUrl').value=S.asUrl||'';
-  document.getElementById('maxAi').textContent=S.maxAi;
-  document.getElementById('maxScm').textContent=S.maxScm;
-  document.getElementById('maxQh').textContent=S.maxQh;
-  renderChips();renderFeeds();
-  document.getElementById('sttext').textContent=S.email?'설정 있음 ✓':'설정 필요';
+function setSyncStatus(ok){
+  document.getElementById('syncDot').className='dot '+(ok?'ok':'no');
+  document.getElementById('syncTxt').textContent=ok?'GitHub 연동됨':'연동 필요';
+  document.getElementById('syncBanner').style.display=ok?'none':'flex';
 }
-
-function save(){try{localStorage.setItem(LS,JSON.stringify(S));}catch(e){}}
 
 function renderChips(){
   const a=document.getElementById('chipsArea');a.innerHTML='';
-  S.keywords.forEach(k=>{
+  (cfg.keywords||[]).forEach(k=>{
     const c=document.createElement('span');c.className='chip';
-    c.innerHTML=esc(k)+' <button class="xb" onclick="rmk(\''+k.replace(/'/g,"\\'")+'\')" aria-label="'+esc(k)+' 삭제">×</button>';
+    c.innerHTML=esc(k)+' <button class="xb" onclick="rmk(\''+k.replace(/'/g,"\\'")+'\')" aria-label="삭제">×</button>';
     a.appendChild(c);
   });
 }
-function rmk(k){S.keywords=S.keywords.filter(x=>x!==k);renderChips();}
+function rmk(k){cfg.keywords=(cfg.keywords||[]).filter(x=>x!==k);renderChips();}
 
 document.getElementById('kInput').addEventListener('keydown',e=>{
-  if(e.key==='Enter'){
-    const v=e.target.value.trim();
-    if(v&&!S.keywords.includes(v)){S.keywords.push(v);renderChips();}
-    e.target.value='';e.preventDefault();
-  }
+  if(e.key==='Enter'){const v=e.target.value.trim();if(v&&!(cfg.keywords||[]).includes(v)){cfg.keywords=[...(cfg.keywords||[]),v];renderChips();}e.target.value='';e.preventDefault();}
 });
 
-function renderFeeds(){
-  rfList('aiFeedList',AI_FEEDS,false);
-  rfList('scmFeedList',SCM_FEEDS,true);
-}
+function renderFeeds(){rfList('aiFeedList',AI_FEEDS,false);rfList('scmFeedList',SCM_FEEDS,true);}
 function rfList(id,feeds,isScm){
   const c=document.getElementById(id);c.innerHTML='';
   feeds.forEach(name=>{
-    const on=!S.disabled.includes(name);
+    const on=!(cfg.disabledFeeds||[]).includes(name);
     const row=document.createElement('div');row.className='frow';
     row.innerHTML='<span>'+esc(name)+'</span><label class="tog'+(isScm?' sc':'')+'"><input type="checkbox"'+(on?' checked':'')+'><span class="ts"></span></label>';
-    row.querySelector('input').onchange=e=>{
-      if(e.target.checked)S.disabled=S.disabled.filter(f=>f!==name);
-      else if(!S.disabled.includes(name))S.disabled.push(name);
-    };
+    row.querySelector('input').onchange=e=>{if(e.target.checked)cfg.disabledFeeds=(cfg.disabledFeeds||[]).filter(f=>f!==name);else if(!(cfg.disabledFeeds||[]).includes(name))cfg.disabledFeeds=[...(cfg.disabledFeeds||[]),name];};
     c.appendChild(row);
   });
 }
 
 function adj(id,d){
   const el=document.getElementById(id);
-  const min=id==='maxQh'?0:1,max=id==='maxQh'?20:8;
+  const min=id==='maxQuickHits'?0:1,max=id==='maxQuickHits'?20:8;
   const v=Math.max(min,Math.min(max,parseInt(el.textContent)+d));
-  el.textContent=v;
-  if(id==='maxAi')S.maxAi=v;else if(id==='maxScm')S.maxScm=v;else S.maxQh=v;
+  el.textContent=v;cfg[id]=v;
 }
 
-function saveAll(){
-  const r=document.getElementById('apiKey').value;
-  S.email=document.getElementById('toEmail').value;
-  if(r&&!r.includes('•'))S.apiKey=r;
-  S.asUrl=document.getElementById('asUrl').value;
-  save();
-  setMsg('저장됨 ✓','#1E7E9E');
-  document.getElementById('sttext').textContent=S.email?'설정 있음 ✓':'설정 필요';
+async function saveToGithub(){
+  const {owner,repo,pat}=getGh();
+  if(!pat){setMsg('msg2','먼저 ⚙️ GitHub 연동 설정에서 토큰을 입력해주세요','#f59e0b');return;}
+  setMsg('msg2','저장 중...');
+  try{
+    const fileR=await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/config.json`,{headers:{Authorization:`Bearer ${pat}`,Accept:'application/vnd.github+json'}});
+    const fileD=await fileR.json();
+    const res=await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/config.json`,{method:'PUT',headers:{Authorization:`Bearer ${pat}`,'Content-Type':'application/json',Accept:'application/vnd.github+json'},body:JSON.stringify({message:'대시보드 설정 업데이트',content:btoa(unescape(encodeURIComponent(JSON.stringify(cfg,null,2)))),sha:fileD.sha})});
+    if(res.ok||res.status===200)setMsg('msg2','✓ 저장 완료 — 다음 뉴스레터부터 반영됩니다','#22c55e');
+    else setMsg('msg2','저장 실패: '+res.status,'#E97451');
+  }catch(e){setMsg('msg2','오류: '+e.message,'#E97451');}
 }
 
-function setMsg(t,c){
-  const el=document.getElementById('msg');el.textContent=t;
-  el.style.color=c||'#9ca3af';
-  if(c)setTimeout(()=>{el.textContent='';el.style.color='';},5000);
+async function triggerWorkflow(){
+  const {owner,repo,pat}=getGh();
+  if(!pat){setMsg('msg2','먼저 ⚙️ GitHub 연동 설정에서 토큰을 입력해주세요','#f59e0b');return;}
+  document.getElementById('testBtn').disabled=true;
+  setMsg('msg2','발송 트리거 중...');
+  try{
+    await saveToGithub();
+    const res=await fetch(`https://api.github.com/repos/${owner}/${repo}/actions/workflows/newsletter.yml/dispatches`,{method:'POST',headers:{Authorization:`Bearer ${pat}`,'Content-Type':'application/json',Accept:'application/vnd.github+json'},body:JSON.stringify({ref:'main'})});
+    if(res.ok||res.status===204)setMsg('msg2','✓ 발송 시작됨 — GitHub Actions 실행 중 (1~2분 후 메일 도착)','#22c55e');
+    else setMsg('msg2','트리거 실패: '+res.status,'#E97451');
+  }catch(e){setMsg('msg2','오류: '+e.message,'#E97451');}
+  finally{document.getElementById('testBtn').disabled=false;}
 }
 
+function savePat(){
+  localStorage.setItem('gh_owner',document.getElementById('ghOwner').value.trim());
+  localStorage.setItem('gh_repo',document.getElementById('ghRepo').value.trim());
+  localStorage.setItem('gh_pat',document.getElementById('ghPat').value.trim());
+  setMsg('msg3','✓ 저장됨','#22c55e');
+  loadConfig();
+}
+
+async function testConnection(){
+  const {owner,repo,pat}=getGh();
+  if(!pat){setMsg('msg3','토큰을 입력해주세요','#f59e0b');return;}
+  setMsg('msg3','연결 테스트 중...');
+  try{
+    const r=await fetch(`https://api.github.com/repos/${owner}/${repo}`,{headers:{Authorization:`Bearer ${pat}`,Accept:'application/vnd.github+json'}});
+    if(r.ok)setMsg('msg3','✓ 연결 성공!','#22c55e');
+    else setMsg('msg3','연결 실패: 토큰 또는 리포 이름 확인','#E97451');
+  }catch(e){setMsg('msg3','오류: '+e.message,'#E97451');}
+}
+
+function setMsg(id,t,c){const el=document.getElementById(id);el.textContent=t;el.style.color=c||'var(--txt3)';if(c)setTimeout(()=>{el.textContent='';el.style.color='';},6000);}
 function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
-load();
+const gh=getGh();
+if(gh.owner){document.getElementById('ghOwner').value=gh.owner;document.getElementById('ghRepo').value=gh.repo;document.getElementById('ghPat').value=gh.pat?'••••••••':'';}
+loadConfig();
 </script>
 </body>
 </html>
