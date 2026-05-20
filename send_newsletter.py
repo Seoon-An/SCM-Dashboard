@@ -11,8 +11,9 @@ import feedparser, requests
 with open('config.json', encoding='utf-8') as f:
     config = json.load(f)
 
-GEMINI_KEY   = os.environ['GEMINI_API_KEY']
-GEMINI_MODEL = 'gemini-2.0-flash'
+GEMINI_KEY    = os.environ.get('GEMINI_API_KEY', '')   # Gemini 비활성화 시 없어도 무방
+GEMINI_MODEL  = 'gemini-2.0-flash'
+GEMINI_ENABLED = False   # ← Gemini API 준비되면 True로 변경
 TO_EMAIL     = os.environ['TO_EMAIL']
 GMAIL_USER   = os.environ['GMAIL_ADDRESS']
 GMAIL_PASS   = os.environ['GMAIL_APP_PASSWORD']
@@ -72,7 +73,7 @@ def main():
     print('에디터 노트 생성 중...')
     editor_note = gen_editor_note(ai_top, scm_top, q_hits)
 
-    html = build_html(editor_note, ai_top, scm_top, q_hits)
+    html = build_html(editor_note, ai_top, scm_top, q_hits, len(ai_raw), len(scm_raw))
     send_email(f'☕ [AI × SCM Daily] {kr_date(datetime.now())}', html)
     print('완료!')
 
@@ -143,11 +144,55 @@ def pick_top(arts, per_feed, max_total):
     picked.sort(key=lambda x: x['date'], reverse=True)
     return picked[:max_total]
 
+EN_SOURCES = {'TechCrunch AI', 'The Verge AI', 'VentureBeat AI', 'The Decoder',
+              'Supply Chain Dive', 'FreightWaves', 'Modern Materials Handling'}
+
 def pick_quick_hits(all_arts, picked, max_h):
-    seen = {a['link'] for a in picked}
-    rest = [a for a in all_arts if a['link'] not in seen]
-    rest.sort(key=lambda x: x['date'], reverse=True)
-    return rest[:max_h]
+    seen     = {a['link'] for a in picked}
+    ai_names = {f['name'] for f in AI_FEEDS}
+    rest     = [a for a in all_arts if a['link'] not in seen]
+
+    # AI / SCM 분리 후 한국어 우선 정렬
+    def sort_ko_first(lst):
+        ko = [a for a in lst if a['source'] not in EN_SOURCES]
+        en = [a for a in lst if a['source'] in EN_SOURCES]
+        return sorted(ko, key=lambda x: x['date'], reverse=True) + \
+               sorted(en, key=lambda x: x['date'], reverse=True)
+
+    ai_pool  = sort_ko_first([a for a in rest if a['source'] in ai_names])
+    scm_pool = sort_ko_first([a for a in rest if a['source'] not in ai_names])
+
+    # 50/50 균형으로 뽑기
+    half     = max_h // 2
+    en_limit = max_h // 3   # 영문 기사 전체의 1/3 이하
+    en_count = 0
+    result   = []
+
+    for pool in (ai_pool, scm_pool):
+        added = 0
+        for a in pool:
+            if added >= half:
+                break
+            if a['source'] in EN_SOURCES:
+                if en_count >= en_limit:
+                    continue
+                en_count += 1
+            result.append(a)
+            added += 1
+
+    # 부족하면 남은 기사로 채우기 (한국어 우선)
+    used = {a['link'] for a in result}
+    extras = sort_ko_first([a for a in rest if a['link'] not in used])
+    for a in extras:
+        if len(result) >= max_h:
+            break
+        if a['source'] in EN_SOURCES and en_count >= en_limit:
+            continue
+        if a['source'] in EN_SOURCES:
+            en_count += 1
+        result.append(a)
+
+    return sorted(result, key=lambda x: x['date'], reverse=True)[:max_h]
 
 def fetch_og_image(url):
     try:
@@ -198,9 +243,19 @@ def call_gemini(prompt, as_json=False):
 def summarize_batch(articles, is_ai=True):
     if not articles:
         return
+    label = 'AI' if is_ai else 'SCM'
+
+    # ── Gemini 비활성화 상태: RSS 원문 그대로 사용 ──────────────
+    if not GEMINI_ENABLED:
+        for a in articles:
+            a['summary'] = esc(a['description'][:300])
+            a['insight']  = ''
+        print(f'  {label} summarize: Gemini 꺼짐, 원문 사용')
+        return
+
+    # ── Gemini 활성화 시 아래 코드 실행 (GEMINI_ENABLED = True) ──
     color = AI_COLOR if is_ai else SCM_COLOR
     bg    = AI_BG    if is_ai else SCM_BG
-    label = 'AI' if is_ai else 'SCM'
     items = '\n'.join([f'{i+1}. 제목: {a["title"]}\n   내용: {a["description"][:300]}'
                        for i, a in enumerate(articles)])
     prompt = f"""다음 {len(articles)}개 기사를 K-brand FBA SCM 실무자를 위한 뉴스레터로 정리해줘.
@@ -223,7 +278,7 @@ JSON 배열로만 응답:
 [{{"summary":"...","insight":"..."}}, ...]"""
     for attempt in range(3):
         try:
-            raw = call_gemini(prompt)          # JSON 모드 off → 텍스트로 받아 직접 파싱
+            raw = call_gemini(prompt)
             if not raw:
                 raise ValueError('빈 응답')
             m = re.search(r'\[.*\]', raw, re.DOTALL)
@@ -236,11 +291,18 @@ JSON 배열로만 응답:
             return
         except Exception as e:
             print(f'  {label} summarize 실패 (시도 {attempt+1}/3): {e}')
+            if attempt < 2:
+                import time; time.sleep(10)
     for a in articles:
         a['summary'] = esc(a['description'][:200])
         a['insight']  = ''
 
 def gen_editor_note(ai_top, scm_top, q_hits):
+    # ── Gemini 비활성화 상태: 섹션 숨김 ─────────────────────────
+    if not GEMINI_ENABLED:
+        return ''
+
+    # ── Gemini 활성화 시 아래 코드 실행 (GEMINI_ENABLED = True) ──
     ai_names = {f['name'] for f in AI_FEEDS}
     ai_t  = [f'- {a["title"]}' for a in (ai_top + [x for x in q_hits if x['source'] in ai_names])[:8]]
     scm_t = [f'- {a["title"]}' for a in (scm_top + [x for x in q_hits if x['source'] not in ai_names])[:8]]
@@ -273,6 +335,8 @@ SCM → <strong style="color:#175F7A">텍스트</strong> 또는 <span style="bac
             print(f'  에디터 노트: 생성됨')
             return result
         print(f'  에디터 노트 실패 (시도 {attempt+1}/3)')
+        if attempt < 2:
+            import time; time.sleep(10)
     return ''
 
 def gen_weekly_summary(ai_top, scm_top, top_kw):
@@ -351,11 +415,14 @@ def render_hero(a, color):
             f'</div>'
         )
 
+    hero_label = (f'<div style="font-size:12px;font-weight:700;color:{color};letter-spacing:0.3px;margin-bottom:5px;">📌 핵심 요약</div>'
+                  if GEMINI_ENABLED else '')
+
     return (
         f'<div style="border-radius:10px;overflow:hidden;border:1px solid #e8e8e8;margin-bottom:24px;">'
         f'{top_html}'
         f'<div style="padding:20px 26px;background:#fff;border-top:1px solid #eee;">'
-        f'<div style="font-size:12px;font-weight:700;color:{color};letter-spacing:0.3px;margin-bottom:5px;">📌 핵심 요약</div>'
+        f'{hero_label}'
         f'<div style="font-size:15px;color:#444;line-height:1.8;">{summary}</div>'
         f'{insight_html}'
         f'</div></div>'
@@ -388,6 +455,9 @@ def render_card(a, color, placeholder_bg):
             f'</div>'
         )
 
+    summary_label = (f'<div style="font-size:12px;font-weight:700;color:{color};margin-bottom:4px;">📌 핵심 요약</div>'
+                     if GEMINI_ENABLED else '')
+
     return (
         f'<div style="margin-bottom:18px;border-radius:8px;overflow:hidden;border:1px solid #e8e8e8;background:#fff;">'
         f'{thumb}'
@@ -395,14 +465,43 @@ def render_card(a, color, placeholder_bg):
         f'<a href="{link}" style="text-decoration:none;">'
         f'<div style="font-size:15px;font-weight:700;color:#111;line-height:1.4;margin-bottom:10px;">{hl}</div>'
         f'</a>'
-        f'<div style="font-size:12px;font-weight:700;color:{color};margin-bottom:4px;">📌 핵심 요약</div>'
+        f'{summary_label}'
         f'<div style="font-size:14px;color:#444;line-height:1.75;">{summary}</div>'
         f'{insight_html}'
         f'<div style="font-size:12px;color:#bbb;margin-top:10px;">{src}</div>'
         f'</div></div>'
     )
 
-def build_html(editor_note, ai_top, scm_top, q_hits):
+def gen_briefing(ai_total, scm_total, all_articles):
+    """Gemini 없이 오늘의 기사 통계 + 키워드 배지 HTML 생성."""
+    total = ai_total + scm_total
+    kw_list = config.get('keywords', [])
+    all_text = ' '.join(a['title'] + ' ' + a['description'] for a in all_articles)
+    kw_hits = sorted(
+        [(kw, len(re.findall(re.escape(kw), all_text, re.I))) for kw in kw_list if kw.lower() in all_text.lower()],
+        key=lambda x: x[1], reverse=True
+    )[:6]
+    colors  = [AI_COLOR, SCM_COLOR, '#7B5EA7', AI_COLOR, SCM_COLOR, '#7B5EA7']
+    badges  = ''.join(
+        f'<span style="display:inline-block;margin:3px 4px 3px 0;padding:4px 12px;'
+        f'background:{colors[i % len(colors)]}18;border:1px solid {colors[i % len(colors)]}44;'
+        f'border-radius:20px;font-size:13px;font-weight:600;color:{colors[i % len(colors)]};">'
+        f'{esc(kw)}</span>'
+        for i, (kw, _) in enumerate(kw_hits)
+    )
+    return (
+        f'<div style="padding:18px 32px;border-bottom:1px solid #eee;">'
+        f'<div style="font-size:12px;letter-spacing:2px;color:#bbb;font-weight:600;margin-bottom:10px;">📰 오늘의 브리핑</div>'
+        f'<div style="font-size:14px;color:#555;margin-bottom:10px;">'
+        f'오늘 <strong style="color:#111;">{total}건</strong>의 기사를 수집했어요 &nbsp;·&nbsp; '
+        f'<span style="color:{AI_COLOR};">🤖 AI {ai_total}건</span> &nbsp;·&nbsp; '
+        f'<span style="color:{SCM_COLOR};">📦 SCM {scm_total}건</span>'
+        f'</div>'
+        f'{("<div>" + badges + "</div>") if badges else ""}'
+        f'</div>'
+    )
+
+def build_html(editor_note, ai_top, scm_top, q_hits, ai_total=0, scm_total=0):
     ai_names = {f['name'] for f in AI_FEEDS}
 
     combined  = sorted(ai_top + scm_top, key=lambda x: x['date'], reverse=True)
@@ -425,13 +524,14 @@ def build_html(editor_note, ai_top, scm_top, q_hits):
           f'<div style="font-size:14px;color:#aaa;margin-top:6px;">{kr_date(datetime.now())}</div>'
           f'</div>')
 
-    # ── 에디터 노트
-    if not editor_note:
-        editor_note = '🤖 AI — 오늘도 AI 업계에서 흥미로운 소식들이 들어왔습니다.<br><br>📦 SCM — 물류·공급망 현장의 최신 트렌드를 확인해보세요.'
-    H += (f'<div style="padding:18px 32px;border-bottom:1px solid #eee;">'
-          f'<div style="font-size:12px;letter-spacing:2px;color:#bbb;font-weight:600;margin-bottom:10px;">📝 오늘의 한 마디</div>'
-          f'<div style="font-size:15px;color:#333;line-height:1.9;">{editor_note}</div>'
-          f'</div>')
+    # ── Gemini ON: 에디터 노트 / Gemini OFF: 기사 통계 + 키워드 브리핑
+    if editor_note:
+        H += (f'<div style="padding:18px 32px;border-bottom:1px solid #eee;">'
+              f'<div style="font-size:12px;letter-spacing:2px;color:#bbb;font-weight:600;margin-bottom:10px;">📝 오늘의 한 마디</div>'
+              f'<div style="font-size:15px;color:#333;line-height:1.9;">{editor_note}</div>'
+              f'</div>')
+    else:
+        H += gen_briefing(ai_total, scm_total, ai_top + scm_top + q_hits)
 
     # ── 히어로
     H += f'<div style="padding:24px 32px 0;">{render_hero(hero, hero_color)}</div>'
