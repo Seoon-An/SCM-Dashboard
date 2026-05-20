@@ -1,6 +1,7 @@
 """
 AI × SCM Daily Newsletter
-히어로 + 2단 레이아웃 | 친근한 에디터 톤
+히어로 + 2단 레이아웃 | 친절한 존댓말 에디터 톤
+히어로: AI/SCM 전체 중 가장 최신 기사
 """
 
 import json
@@ -65,19 +66,15 @@ def main():
         return
 
     per_feed = config.get('topPerFeed', 2)
-    # 히어로 1개 + 컬럼용을 위해 AI는 maxAiCards+1개 뽑기
-    max_ai   = config.get('maxAiCards', 4)
-    ai_top   = pick_top(ai_articles,  per_feed, max_ai + 1)
-    scm_top  = pick_top(scm_articles, per_feed, config.get('maxScmCards', 4))
+    ai_top   = pick_top(ai_articles,  per_feed, config.get('maxAiCards', 4) + 1)
+    scm_top  = pick_top(scm_articles, per_feed, config.get('maxScmCards', 4) + 1)
     q_hits   = pick_quick_hits(ai_articles + scm_articles, ai_top + scm_top,
                                 config.get('maxQuickHits', 12))
 
-    # 썸네일 이미지 수집
     print('이미지 가져오는 중...')
     for a in ai_top + scm_top:
         a['og_image'] = fetch_og_image(a['link'])
 
-    # 인사이트 생성
     print('AI 인사이트 생성 중...')
     for a in ai_top:
         a.update(summarize(a))
@@ -189,13 +186,12 @@ def call_gemini(prompt, as_json=False):
 
 
 def summarize(article):
-    """에디터가 동료에게 말하듯 가볍고 친근하게 기사를 설명합니다."""
-    prompt = f"""다음 기사를 뉴스레터 에디터가 동료에게 편하게 설명해주듯 요약해줘.
+    """친절한 존댓말 에디터 스타일로 기사를 요약합니다."""
+    prompt = f"""다음 기사를 뉴스레터 에디터가 독자에게 친절하게 설명해주듯 요약해줘.
 tone: 친절한 존댓말. "이번에 흥미로운 소식이 있는데요~" 같은 따뜻하고 친근한 에디터 스타일.
-
 두 파트:
-headline — 흥미롭게 한 문장으로, 클릭하고 싶게 (문장 끝에 마침표 생략 OK)
-body — 모르는 사람도 이해할 수 있게 3-4문장. 쉬운 말로. 레이블 없이 자연스럽게. 이모지 한두 개 OK.
+headline — 흥미롭게 한 문장으로, 읽고 싶어지게 (존댓말 불필요, 임팩트 위주)
+body — 모르는 사람도 이해할 수 있게 쉬운 말로 3-4문장. 레이블 없이 자연스럽게. 존댓말. 이모지 한두 개 OK.
 
 영문이면 자연스러운 한국어로 의역.
 
@@ -233,11 +229,11 @@ def generate_editor_note(ai_top, scm_top, q_hits):
                   (scm_top + [x for x in q_hits if x['source'] not in ai_names])[:8]]
     keywords   = ', '.join(config.get('keywords', []))
 
-    prompt = f"""너는 K-brand FBA 글로벌 이커머스 SCM Operations Manager 동료야.
+    prompt = f"""너는 K-brand FBA 글로벌 이커머스 SCM Operations Manager 독자를 위한 뉴스레터 에디터야.
 관심 키워드: {keywords}
 [AI] {chr(10).join(ai_titles)}
 [SCM] {chr(10).join(scm_titles)}
-주목할 thread 3-4문장. Morning Brew처럼 따뜻하고 살짝 위트 있게.
+오늘 주목할 만한 내용을 3-4문장으로. 친절한 존댓말. Morning Brew처럼 따뜻하게.
 [제약] 특정 회사명·이직 언급 금지.
 에디터 노트(본문만):"""
     return call_gemini(prompt).strip()
@@ -267,9 +263,22 @@ def format_kr_date(d):
     return f'{d.year}년 {d.month}월 {d.day}일 ({days[d.weekday()]})'
 
 
-def render_hero(article):
-    """AI 1위 기사를 풀 히어로로 렌더링합니다."""
-    img = article.get('og_image')
+def scm_tag_block(article, color):
+    """SCM 적용 포인트 태그. 3점 이상일 때만 표시."""
+    score   = article.get('scm_score', 0)
+    comment = article.get('scm_comment')
+    if score < 3 or not comment:
+        return ''
+    return (f'<div style="padding:8px 10px;background:{color}18;border-left:3px solid {color};'
+            f'font-size:12px;color:#444;line-height:1.5;border-radius:0 4px 4px 0;margin-bottom:8px;">'
+            f'💡 {esc(comment)}</div>')
+
+
+def render_hero(article, color=None):
+    """AI/SCM 하이라이트 기사를 풀 히어로로 렌더링합니다."""
+    if color is None:
+        color = AI_COLOR
+    img      = article.get('og_image')
     headline = esc(article.get('headline') or article['title'])
     body     = esc(article.get('body', ''))
     source   = esc(article['source'])
@@ -278,11 +287,12 @@ def render_hero(article):
     img_block = (f'<a href="{link}"><img src="{img}" alt="" width="100%" '
                  f'style="display:block;max-width:100%;height:280px;object-fit:cover;"></a>'
                  if img else
-                 f'<a href="{link}"><div style="height:200px;background:linear-gradient(135deg,{AI_COLOR},{AI_COLOR}cc);display:block;"></div></a>')
+                 f'<a href="{link}"><div style="height:200px;background:linear-gradient(135deg,{color},{color}cc);'
+                 f'display:block;"></div></a>')
 
     return f'''<div style="margin-bottom:28px;border-radius:12px;overflow:hidden;border:1px solid #e8e8e8;">
   {img_block}
-  <div style="background:{AI_COLOR};padding:18px 26px;">
+  <div style="background:{color};padding:18px 26px;">
     <div style="font-size:10px;font-weight:800;letter-spacing:2px;color:rgba(255,255,255,.7);margin-bottom:6px;">🌟 오늘의 하이라이트</div>
     <a href="{link}" style="text-decoration:none;">
       <div style="font-size:20px;font-weight:900;color:#fff;line-height:1.35;">{headline}</div>
@@ -291,13 +301,13 @@ def render_hero(article):
   </div>
   <div style="padding:20px 26px;background:#fff;">
     <div style="font-size:14px;color:#444;line-height:1.75;">{body}</div>
-    {scm_tag_block(article, AI_COLOR)}
+    {scm_tag_block(article, color)}
   </div>
 </div>'''
 
 
 def render_col_card(article, color, show_scm_tag=False):
-    """컬럼용 카드. 제목 클릭하면 원문으로, 원문 버튼 없음."""
+    """컬럼용 카드. 제목 클릭하면 원문으로 이동."""
     img  = article.get('og_image')
     link = article['link']
 
@@ -323,24 +333,16 @@ def render_col_card(article, color, show_scm_tag=False):
 </div>'''
 
 
-def scm_tag_block(article, color):
-    """SCM 적용 포인트 태그. 3점 이상일 때만 표시."""
-    score   = article.get('scm_score', 0)
-    comment = article.get('scm_comment')
-    if score < 3 or not comment:
-        return ''
-    return (f'<div style="padding:8px 10px;background:{color}15;border-left:3px solid {color};'
-            f'font-size:12px;color:#444;line-height:1.5;border-radius:0 4px 4px 0;margin-bottom:8px;">'
-            f'💡 {esc(comment)}</div>')
-
-
 def build_html(editor_note, ai_top, scm_top, q_hits):
     """뉴스레터 전체 HTML. 히어로 + 2단 + Quick Hits."""
     ai_names = {f['name'] for f in AI_FEEDS}
 
-    # 히어로: ai_top[0], 컬럼: ai_top[1:]
-    hero_article = ai_top[0] if ai_top else None
-    ai_col       = ai_top[1:]
+    # 히어로: AI + SCM 전체 중 가장 최신 기사
+    all_combined = sorted(ai_top + scm_top, key=lambda x: x['date'], reverse=True)
+    hero_article = all_combined[0] if all_combined else None
+    hero_color   = AI_COLOR if hero_article in ai_top else SCM_COLOR
+    ai_col       = [a for a in ai_top  if a is not hero_article]
+    scm_col      = [a for a in scm_top if a is not hero_article]
 
     wrap = ('max-width:1000px;margin:0 auto;background:#ffffff;'
             'font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;'
@@ -348,55 +350,54 @@ def build_html(editor_note, ai_top, scm_top, q_hits):
 
     html = f'<body style="margin:0;padding:20px 0;background:#efefef;"><div style="{wrap}">'
 
-    # ── 헤더 ──────────────────────────────────────────────
+    # 헤더
     html += f'''<div style="padding:24px 32px 18px;border-bottom:2px solid #111;">
   <div style="font-size:10px;font-weight:800;letter-spacing:2px;color:#aaa;text-transform:uppercase;margin-bottom:6px;">AI × SCM Daily</div>
   <div style="font-size:24px;font-weight:900;color:#111;letter-spacing:-0.3px;">☕ 굿모닝!</div>
   <div style="font-size:13px;color:#aaa;margin-top:5px;">{format_kr_date(datetime.now())}</div>
 </div>'''
 
-    # ── 에디터 노트 ────────────────────────────────────────
+    # 에디터 노트
     if editor_note:
         html += f'''<div style="padding:18px 32px;border-bottom:1px solid #eee;">
   <div style="font-size:10px;font-weight:800;letter-spacing:2px;color:#bbb;text-transform:uppercase;margin-bottom:8px;">📝 오늘의 한 마디</div>
   <div style="font-size:15px;color:#333;line-height:1.75;">{esc(editor_note)}</div>
 </div>'''
 
-    # ── 히어로 기사 ────────────────────────────────────────
+    # 히어로
     if hero_article:
-        html += f'<div style="padding:24px 32px 0;">{render_hero(hero_article)}</div>'
+        html += f'<div style="padding:24px 32px 0;">{render_hero(hero_article, hero_color)}</div>'
 
-    # ── 2단 레이아웃 ───────────────────────────────────────
+    # 2단 레이아웃
     html += '<div style="padding:0 32px 24px;">'
     html += '<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">'
     html += '<tr>'
 
-    # 왼쪽: 나머지 AI 기사
+    # 왼쪽: AI
     html += '<td width="48%" valign="top" style="padding-right:14px;">'
     if ai_col:
         html += (f'<div style="font-size:12px;font-weight:800;color:{AI_COLOR};'
                  f'letter-spacing:1px;padding-bottom:10px;border-bottom:2px solid {AI_COLOR};'
-                 f'margin-bottom:14px;text-transform:uppercase;">🤖 AI 더보기</div>')
+                 f'margin-bottom:14px;text-transform:uppercase;">🤖 AI 핫이슈</div>')
         for a in ai_col:
             html += render_col_card(a, AI_COLOR, show_scm_tag=True)
     html += '</td>'
 
-    # 간격
     html += '<td width="4%" valign="top"></td>'
 
     # 오른쪽: SCM
     html += '<td width="48%" valign="top" style="padding-left:14px;">'
-    if scm_top:
+    if scm_col:
         html += (f'<div style="font-size:12px;font-weight:800;color:{SCM_COLOR};'
                  f'letter-spacing:1px;padding-bottom:10px;border-bottom:2px solid {SCM_COLOR};'
                  f'margin-bottom:14px;text-transform:uppercase;">📦 SCM 핫이슈</div>')
-        for a in scm_top:
+        for a in scm_col:
             html += render_col_card(a, SCM_COLOR)
     html += '</td>'
 
     html += '</tr></table></div>'
 
-    # ── Quick Hits ─────────────────────────────────────────
+    # Quick Hits
     if q_hits:
         html += '<div style="padding:20px 32px;background:#fafafa;border-top:1px solid #eee;">'
         html += (f'<div style="font-size:11px;font-weight:800;letter-spacing:2px;'
@@ -413,7 +414,7 @@ def build_html(editor_note, ai_top, scm_top, q_hits):
                      f'line-height:1.5;">{esc(a["title"])}</a></div>')
         html += '</div>'
 
-    # ── 푸터 ──────────────────────────────────────────────
+    # 푸터
     html += '<div style="padding:18px 32px;border-top:1px solid #eee;text-align:center;font-size:12px;color:#ccc;">📬 좋은 하루 보내세요 ✨</div>'
     html += '</div></body>'
 
