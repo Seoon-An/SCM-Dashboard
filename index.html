@@ -184,8 +184,6 @@ input:focus{border-color:var(--coral);}
           <div class="ctitle">발송 설정</div>
           <div style="margin-bottom:12px;"><label class="fl">받는 이메일</label><input type="email" id="toEmail" placeholder="your_id@naver.com"></div>
           <div style="margin-bottom:12px;"><label class="fl">Gemini API Key</label><input type="password" id="apiKey" placeholder="AIza..."></div>
-          <div><label class="fl">Apps Script URL<span style="font-weight:400;color:var(--txt3);"> (테스트 발송용)</span></label><input type="text" id="asUrl" placeholder="https://script.google.com/macros/s/..."></div>
-        </div>
 
         <!-- 관심 키워드 -->
         <div class="card">
@@ -317,18 +315,6 @@ function saveAll(){
   save();
   setMsg('저장됨 ✓','#1E7E9E');
   document.getElementById('sttext').textContent=S.email?'설정 있음 ✓':'설정 필요';
-}
-
-function doTest(){
-  const url=S.asUrl||document.getElementById('asUrl').value;
-  if(!url){setMsg('Apps Script URL을 먼저 입력해주세요','#E97451');return;}
-  document.getElementById('testBtn').disabled=true;
-  setMsg('요청 전송 중...');
-  fetch(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({action:'testSend'})})
-    .then(()=>setMsg('전송 완료 — 1~2분 내 메일 도착 예정 ✉️','#1E7E9E'))
-    .catch(()=>setMsg('전송 완료 (CORS로 응답 확인 불가 — 정상입니다)','#1E7E9E'))
-    .finally(()=>{document.getElementById('testBtn').disabled=false;});
 }
 
 function setMsg(t,c){
