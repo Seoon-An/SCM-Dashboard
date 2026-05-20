@@ -172,18 +172,28 @@ def fetch_og_image(url):
 def call_gemini(prompt, as_json=False):
     url  = f'https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent?key={GEMINI_KEY}'
     body = {'contents':[{'parts':[{'text':prompt}]}]}
-    if as_json:
-        body['generationConfig'] = {'responseMimeType':'application/json'}
+    # JSON 모드 제거 — HTML 태그 포함 프롬프트에서 strict JSON 모드가 실패하는 경우 방지
     r = requests.post(url, json=body, timeout=60)
     data = r.json()
+    # 디버그: 응답 전체 구조 출력
+    print(f'  [Gemini] HTTP {r.status_code} | keys: {list(data.keys())}')
     if 'error' in data:
-        print(f'  Gemini 오류: {data["error"].get("message","")}')
+        print(f'  [Gemini] 오류: {data["error"]}')
         return ''
-    parts = data.get('candidates',[{}])[0].get('content',{}).get('parts',[])
+    candidates = data.get('candidates', [])
+    if not candidates:
+        print(f'  [Gemini] candidates 없음. 전체 응답: {str(data)[:400]}')
+        return ''
+    candidate = candidates[0]
+    finish = candidate.get('finishReason', '')
+    parts  = candidate.get('content', {}).get('parts', [])
+    print(f'  [Gemini] finishReason={finish} | parts={len(parts)}')
     if not parts:
-        print(f'  Gemini 빈 응답: {str(data)[:300]}')
+        print(f'  [Gemini] parts 없음. candidate: {str(candidate)[:300]}')
         return ''
-    return parts[0].get('text', '')
+    text = parts[0].get('text', '')
+    print(f'  [Gemini] 응답 길이: {len(text)}자 | 앞부분: {text[:80].replace(chr(10)," ")}')
+    return text
 
 def summarize_batch(articles, is_ai=True):
     if not articles:
@@ -213,7 +223,7 @@ JSON 배열로만 응답:
 [{{"summary":"...","insight":"..."}}, ...]"""
     for attempt in range(3):
         try:
-            raw = call_gemini(prompt, True)
+            raw = call_gemini(prompt)          # JSON 모드 off → 텍스트로 받아 직접 파싱
             if not raw:
                 raise ValueError('빈 응답')
             m = re.search(r'\[.*\]', raw, re.DOTALL)
