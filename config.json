@@ -1,5 +1,10 @@
 {
-  "keywords": ["수요예측", "재고최적화", "물류비 절감", "AI agent"],
+  "keywords": [
+    "수요예측",
+    "재고최적화",
+    "물류비 절감",
+    "AI agent"
+  ],
   "disabledFeeds": [],
   "maxAiCards": 4,
   "maxScmCards": 4,
