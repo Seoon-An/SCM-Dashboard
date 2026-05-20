@@ -259,7 +259,7 @@ def scm_tag(a, color):
 def render_hero(a, color):
     img  = a.get('og_image')
     link = a['link']
-    hl   = esc(a.get('headline') or a['title'])
+    hl   = esc(a['title'])
     body = esc(a.get('body',''))
     src  = esc(a['source'])
     img_block = (f'<a href="{link}" style="display:block;"><img src="{img}" alt="" width="100%" '
@@ -326,8 +326,9 @@ def build_html(editor_note, ai_top, scm_top, q_hits):
 </div>'''
 
     # 에디터 노트: 한 덩어리
-    if editor_note:
-        H += f'''<div style="padding:18px 32px;border-bottom:1px solid #eeeeee;">
+    if not editor_note:
+        editor_note = '🤖 AI — 오늘도 AI 업계에서 흥미로운 소식들이 들어왔습니다.\n\n📦 SCM — 물류·공급망 현장의 최신 트렌드를 확인해보세요.'
+    H += f'''<div style="padding:18px 32px;border-bottom:1px solid #eeeeee;">
   <div style="font-size:10px;font-weight:700;letter-spacing:2px;color:#bbbbbb;text-transform:uppercase;margin-bottom:10px;">📝 오늘의 한 마디</div>
   <div style="padding:16px 18px;background:#fafafa;border-radius:8px;border-left:3px solid #dddddd;font-size:14px;color:#444444;line-height:1.85;">{esc(editor_note).replace(chr(10)+chr(10),"<br><br>").replace(chr(10),"<br>")}</div>
 </div>'''
