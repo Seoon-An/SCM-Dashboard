@@ -65,9 +65,10 @@ def main():
         a['og_image'] = fetch_og_image(a['link'])
 
     print('AI 인사이트 생성 중...')
-    for a in ai_top:
-        a.update(summarize(a))
-        a.update(tag_scm(a))
+        for a in ai_top:
+            a.update(summarize(a))
+            print(f'  body: {a.get("body","[비어있음]")[:60]}')
+            a.update(tag_scm(a))
 
     print('SCM 인사이트 생성 중...')
     for a in scm_top:
