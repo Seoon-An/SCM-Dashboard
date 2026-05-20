@@ -64,15 +64,9 @@ def main():
     for a in ai_top + scm_top:
         a['og_image'] = fetch_og_image(a['link'])
 
-    print('AI 인사이트 생성 중...')
-    for a in ai_top:
-        a.update(summarize(a))
-        print(f'  body: {a.get("body","[비어있음]")[:60]}')
-        a.update(tag_scm(a))
-
-    print('SCM 인사이트 생성 중...')
-    for a in scm_top:
-        a.update(summarize(a))
+    print('인사이트 생성 중...')
+    summarize_batch(ai_top + scm_top)
+    tag_scm_batch(ai_top)
 
     print('에디터 노트 생성 중...')
     editor_note = gen_editor_note(ai_top, scm_top, q_hits)
@@ -173,30 +167,46 @@ def call_gemini(prompt, as_json=False):
     r = requests.post(url, json=body, timeout=30)
     return (r.json().get('candidates',[{}])[0].get('content',{}).get('parts',[{}])[0].get('text',''))
     
-def summarize(a):
-    prompt = f"""다음 기사를 뉴스레터 에디터가 독자에게 친절하게 설명해주듯 요약해줘.
-tone: 친절한 존댓말. 따뜻하고 친근한 에디터 스타일.
-headline — 흥미롭게 한 문장, 읽고 싶어지게
-body — 쉬운 말로 3-4문장. 존댓말. 이모지 한두 개 OK.
-영문이면 자연스러운 한국어로 의역.
-기사: {a['title']} / {a['description']}
-JSON만: {{"headline":"...","body":"..."}}"""
-    try:
-        d = json.loads(call_gemini(prompt, True))
-        return {'headline':d.get('headline',''), 'body':d.get('body','')}
-    except:
-        return {'headline':a['title'], 'body':a['description'][:200]}
+def summarize_batch(articles):
+    items = '\n'.join([f'{i+1}. 제목: {a["title"]}\n   내용: {a["description"][:300]}'
+                       for i, a in enumerate(articles)])
+    prompt = f"""다음 {len(articles)}개 기사를 각각 뉴스레터 에디터 스타일로 요약해줘.
+tone: 친절한 존댓말. 따뜻하고 친근하게.
+각 기사마다 body: 쉬운 말로 3-4문장, 존댓말, 이모지 한두 개 OK. 영문이면 한국어로 의역.
 
-def tag_scm(a):
-    prompt = f"""AI 기사의 K-brand FBA 이커머스 적용 가능성:
-5=즉시/4=직접/3=간접/2=일반/1=무관. 3이상 40자이내 코멘트. 2이하 null.
-기사: {a['title']}
-JSON만: {{"score":<int>,"comment":<string|null>}}"""
+{items}
+
+JSON 배열만 (기사 순서 그대로):
+[{{"body":"..."}}, {{"body":"..."}}, ...]"""
     try:
-        d = json.loads(call_gemini(prompt, True))
-        return {'scm_score':d.get('score',0), 'scm_comment':d.get('comment')}
-    except:
-        return {'scm_score':0, 'scm_comment':None}
+        result = json.loads(call_gemini(prompt, True))
+        for i, a in enumerate(articles):
+            a['body'] = result[i].get('body', a['description'][:200]) if i < len(result) else a['description'][:200]
+    except Exception as e:
+        print(f'  summarize_batch 실패: {e}')
+        for a in articles:
+            a['body'] = a['description'][:200]
+
+def tag_scm_batch(articles):
+    items = '\n'.join([f'{i+1}. {a["title"]}' for i, a in enumerate(articles)])
+    prompt = f"""각 AI 기사의 K-brand FBA 이커머스 적용 가능성:
+5=즉시/4=직접/3=간접/2=일반/1=무관. 3이상만 40자이내 코멘트.
+
+{items}
+
+JSON 배열만 (기사 순서 그대로):
+[{{"score":<int>,"comment":<string|null>}}, ...]"""
+    try:
+        result = json.loads(call_gemini(prompt, True))
+        for i, a in enumerate(articles):
+            if i < len(result):
+                a['scm_score'] = result[i].get('score', 0)
+                a['scm_comment'] = result[i].get('comment')
+    except Exception as e:
+        print(f'  tag_scm_batch 실패: {e}')
+        for a in articles:
+            a['scm_score'] = 0
+            a['scm_comment'] = None
 
 def gen_editor_note(ai_top, scm_top, q_hits):
     ai_names = {f['name'] for f in AI_FEEDS}
@@ -282,7 +292,7 @@ def render_hero(a, color):
 def render_card(a, color, show_scm=False):
     img  = a.get('og_image')
     link = a['link']
-    hl   = esc(a.get('headline') or a['title'])
+    hl   = esc(a['title'])
     body = esc(a.get('body',''))
     src  = esc(a['source'])
     img_block = (f'<a href="{link}" style="display:block;"><img src="{img}" alt="" width="100%" '
