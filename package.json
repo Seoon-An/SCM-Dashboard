@@ -1,0 +1,10 @@
+{
+  "name": "scm-newsletter",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": { "send": "node send-newsletter.js" },
+  "dependencies": {
+    "nodemailer": "^6.9.14",
+    "fast-xml-parser": "^4.3.6"
+  }
+}
