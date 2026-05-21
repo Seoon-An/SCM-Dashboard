@@ -54,17 +54,32 @@ HERO_KW = ['AI', '인공지능', 'SCM', '물류', '공급망', '자동화', '에
            '로봇', 'robot', 'agent', '이커머스', 'FBA', '수요예측', '재고',
            'supply chain', 'logistics', 'warehouse', 'automation', 'machine learning']
 
+# 관련성 판단 키워드 — 이 중 하나도 없으면 뉴스레터에서 제외
+_RELEVANCE_KW = [
+    'ai', '인공지능', '머신러닝', '딥러닝', '자동화', '로봇', '에이전트', 'llm', 'gpt',
+    'scm', '물류', '공급망', '배송', '유통', '창고', '재고', '운송', '해운', '항만',
+    'fba', '이커머스', '전자상거래', '셀러', '아마존', '쿠팡', '관세', '무역', '수출', '수입',
+    'supply chain', 'logistics', 'warehouse', 'automation', 'machine learning',
+    '데이터', '클라우드', '반도체', '디지털', '플랫폼', '소프트웨어', '스타트업',
+    '운임', '항공화물', '컨테이너', '물류비', '수요예측', '재고최적화',
+]
+
+def is_relevant(a):
+    text = (a['title'] + ' ' + a['description']).lower()
+    cfg_kw = [k.lower() for k in config.get('keywords', [])]
+    return any(kw in text for kw in cfg_kw + _RELEVANCE_KW)
+
 
 # ── 일간 메인 ──────────────────────────────────────────────
 def main():
-    since    = datetime.now(timezone.utc) - timedelta(hours=24)
+    since    = datetime.now(timezone.utc) - timedelta(days=7)
     disabled = set(config.get('disabledFeeds', []))
     active_ai  = [f for f in AI_FEEDS  if f['name'] not in disabled]
     active_scm = [f for f in SCM_FEEDS if f['name'] not in disabled]
 
     print('Fetching feeds...')
-    ai_raw  = collect_articles(active_ai,  since)
-    scm_raw = collect_articles(active_scm, since)
+    ai_raw  = [a for a in collect_articles(active_ai,  since) if is_relevant(a)]
+    scm_raw = [a for a in collect_articles(active_scm, since) if is_relevant(a)]
     print(f'AI: {len(ai_raw)}건, SCM: {len(scm_raw)}건')
     if not ai_raw and not scm_raw:
         print('새 기사 없음.'); return
@@ -147,7 +162,8 @@ def clean(s):
     return re.sub(r'\s+',' ',s).strip()
 
 EN_SOURCES = {'TechCrunch AI', 'The Verge AI', 'VentureBeat AI', 'The Decoder',
-              'Supply Chain Dive', 'FreightWaves', 'Modern Materials Handling'}
+              'Supply Chain Dive', 'FreightWaves', 'Modern Materials Handling',
+              'Logistics Management', 'DC Velocity'}
 
 def _kw_score(a):
     """관심 키워드 매칭 수 — 많을수록 우선 노출."""
@@ -599,11 +615,24 @@ def build_html(editor_note, ai_top, scm_top, q_hits, ai_total=0, scm_total=0):
 
     H = f'<body style="margin:0;padding:20px 0;background:#efefef;"><div style="{W}">'
 
-    # ── 헤더
+    # ── 헤더 (관심 키워드 배지 포함)
+    cfg_kw = config.get('keywords', [])
+    kw_badge_html = ''
+    if cfg_kw:
+        colors = [AI_COLOR, SCM_COLOR] * 10
+        kw_badge_html = '<div style="margin-top:10px;">' + ''.join(
+            f'<span style="display:inline-block;margin:3px 4px 3px 0;padding:3px 11px;'
+            f'background:{colors[i%2]}15;border:1px solid {colors[i%2]}50;'
+            f'border-radius:20px;font-size:12px;font-weight:600;color:{colors[i%2]};">'
+            f'{esc(kw)}</span>'
+            for i, kw in enumerate(cfg_kw)
+        ) + '</div>'
+
     H += (f'<div style="padding:22px 32px 16px;border-bottom:2.5px solid #111;">'
           f'<div style="font-size:12px;letter-spacing:2.5px;color:#aaa;margin-bottom:6px;font-weight:500;">AI × SCM DAILY</div>'
           f'<div style="font-size:28px;font-weight:700;line-height:1.2;">☕ 굿모닝!</div>'
           f'<div style="font-size:14px;color:#aaa;margin-top:6px;">{kr_date(datetime.now())}</div>'
+          f'{kw_badge_html}'
           f'</div>')
 
     # ── Gemini ON: 에디터 노트 / Gemini OFF: 기사 통계 + 키워드 브리핑
