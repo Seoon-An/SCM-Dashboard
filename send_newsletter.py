@@ -371,6 +371,21 @@ def esc(s):
 def kr_date(d):
     return f'{d.year}년 {d.month}월 {d.day}일 ({"월화수목금토일"[d.weekday()]})'
 
+# 제목에서 주요 키워드를 색상+볼드로 강조
+_HIGHLIGHT_KW = (config.get('keywords', []) +
+                 ['AI', '인공지능', 'SCM', '물류', '공급망', '자동화', '에이전트',
+                  'FBA', '수요예측', '재고', '로봇', '이커머스', '관세', '운임'])
+
+def highlight_title(title, color):
+    result = esc(title)
+    for kw in sorted(_HIGHLIGHT_KW, key=len, reverse=True):  # 긴 키워드 먼저 매칭
+        pattern = re.compile(re.escape(esc(kw)), re.IGNORECASE)
+        result = pattern.sub(
+            f'<strong style="color:{color};font-weight:700;">{esc(kw)}</strong>',
+            result, count=1
+        )
+    return result
+
 
 # ── 일간 HTML ──────────────────────────────────────────────
 def render_hero(a, color):
@@ -547,12 +562,11 @@ def build_html(editor_note, ai_top, scm_top, q_hits, ai_total=0, scm_total=0):
 
     H += (f'<div style="padding:0 32px 24px;">'
           f'<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;"><tr>'
-          f'<td width="48%" valign="top" style="padding-right:12px;">'
-          f'{col_header("🤖","AI 핫이슈", AI_COLOR)}{ai_cards}'
+          f'<td width="50%" valign="top" style="padding-right:9px;">'
+          f'{col_header("🤖","AI 이슈", AI_COLOR)}{ai_cards}'
           f'</td>'
-          f'<td width="4%" style="width:4%;"></td>'
-          f'<td width="48%" valign="top" style="padding-left:12px;">'
-          f'{col_header("📦","SCM 핫이슈", SCM_COLOR)}{scm_cards}'
+          f'<td width="50%" valign="top" style="padding-left:9px;">'
+          f'{col_header("📦","SCM 이슈", SCM_COLOR)}{scm_cards}'
           f'</td>'
           f'</tr></table></div>')
 
@@ -561,18 +575,26 @@ def build_html(editor_note, ai_top, scm_top, q_hits, ai_total=0, scm_total=0):
         rows = ''
         for i, a in enumerate(q_hits):
             is_ai = a['source'] in ai_names
-            tc = AI_COLOR if is_ai else SCM_COLOR
-            tl = 'AI' if is_ai else 'SCM'
-            bd = 'border-bottom:1px solid #eee;' if i < len(q_hits)-1 else ''
-            rows += (f'<div style="padding:9px 0;{bd}display:table;width:100%;">'
-                     f'<span style="display:table-cell;white-space:nowrap;vertical-align:middle;padding-right:8px;">'
-                     f'<span style="font-size:11px;font-weight:700;color:#fff;background:{tc};'
-                     f'padding:3px 9px;border-radius:20px;">{tl}</span></span>'
-                     f'<span style="display:table-cell;vertical-align:middle;">'
-                     f'<a href="{a["link"]}" style="font-size:14px;color:#333;text-decoration:none;line-height:1.5;">{esc(a["title"])}</a>'
-                     f'</span></div>')
+            tc  = AI_COLOR if is_ai else SCM_COLOR
+            tl  = 'AI' if is_ai else 'SCM'
+            bd  = 'border-bottom:1px solid #eee;' if i < len(q_hits)-1 else ''
+            ttl = highlight_title(a['title'], tc)
+            rows += (
+                f'<table width="100%" cellpadding="0" cellspacing="0" style="{bd}padding:0;">'
+                f'<tr>'
+                # 배지 셀: 고정 너비로 제목 시작점 통일
+                f'<td width="52" style="width:52px;padding:9px 10px 9px 0;vertical-align:middle;">'
+                f'<span style="display:inline-block;width:48px;text-align:center;font-size:11px;'
+                f'font-weight:700;color:#fff;background:{tc};padding:3px 0;border-radius:20px;">{tl}</span>'
+                f'</td>'
+                # 제목 셀
+                f'<td style="padding:9px 0;vertical-align:middle;">'
+                f'<a href="{a["link"]}" style="font-size:14px;color:#333;text-decoration:none;line-height:1.5;">{ttl}</a>'
+                f'</td>'
+                f'</tr></table>'
+            )
         H += (f'<div style="padding:18px 32px;background:#fafafa;border-top:1px solid #eee;">'
-              f'<div style="font-size:13px;letter-spacing:1.5px;color:#aaa;font-weight:600;margin-bottom:14px;">⚡ 빠르게 보는 헤드라인</div>'
+              f'<div style="font-size:13px;letter-spacing:1.5px;color:#aaa;font-weight:600;margin-bottom:6px;">⚡ 빠르게 보는 헤드라인</div>'
               f'{rows}</div>')
 
     H += '<div style="padding:18px 32px;border-top:1px solid #eee;text-align:center;font-size:14px;color:#ccc;">📬 좋은 하루 보내세요 ✨</div>'
