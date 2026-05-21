@@ -1,6 +1,7 @@
 """
 AI × SCM Daily Newsletter
 """
+# 매일 KST 06:00 자동 발송 (GitHub Actions 스케줄)
 
 import json, os, re, sys, smtplib
 from datetime import datetime, timedelta, timezone
