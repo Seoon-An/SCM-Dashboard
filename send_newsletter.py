@@ -474,21 +474,33 @@ def highlight_title(title, color):
     return result
 
 def highlight_body(text, color):
-    """본문: 관심키워드 배지 + 숫자/퍼센트 볼드 + 임팩트 표현 볼드."""
+    """본문 강조: 따옴표 핵심 어구 > 관심키워드 배지 > 수치 > 임팩트 표현"""
     bg = AI_BG if color == AI_COLOR else SCM_BG
     result = esc(text)
-    # 1. 관심 키워드 → 배지 (가장 눈에 띄게)
+
+    # 1. 관심 키워드 → 배지
     for kw in sorted(config.get('keywords', []), key=len, reverse=True):
         result = re.sub(re.escape(esc(kw)),
             f'<span style="background:{bg};padding:1px 5px;border-radius:3px;font-weight:700;color:{color};">{esc(kw)}</span>',
             result, count=1, flags=re.IGNORECASE)
-    # 2. 수치+단위 → 볼드 (e.g. "30%", "1조원", "3배", "200억")
+
+    # 2. 작은따옴표 속 핵심 어구 → 하이라이트 볼드 (한국 기사 관행: 중요 개념을 ''로 감쌈)
+    #    e.g. '국가 전략기술 거점', 'AI 대전환' 등
+    result = re.sub(
+        r'&#39;([^&#]{4,25})&#39;',   # esc() 후 ' → &#39;
+        lambda m: f'<strong style="color:{color};">&#39;{m.group(1)}&#39;</strong>',
+        result
+    )
+
+    # 3. 수치+단위 → 볼드
     result = re.sub(
         r'(\d[\d,]*(?:\.\d+)?(?:억|조|만|천)?(?:원|달러|위안|유로)?\s*(?:%|퍼센트|배|건|명|개))',
         f'<strong style="color:{color};">\\1</strong>', result)
-    # 3. 임팩트 표현 → 볼드
+
+    # 4. 임팩트 표현 → 볼드
     for kw in sorted(_IMPACT_KW, key=len, reverse=True):
         result = result.replace(esc(kw), f'<strong style="color:{color};">{esc(kw)}</strong>', 1)
+
     return result
 
 
@@ -714,7 +726,14 @@ def build_html(editor_note, hero, hero_color, ai_top, scm_top, q_hits, ai_total=
 
     H += '<div style="padding:18px 32px;border-top:1px solid #eee;text-align:center;font-size:14px;color:#ccc;">📬 좋은 하루 보내세요 ✨</div>'
     H += '</div></body>'
-    return f'<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>{H}</html>'
+    head = (
+        '<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+        '<link rel="preconnect" href="https://fonts.googleapis.com">'
+        '<link href="https://fonts.googleapis.com/css2?family=Nanum+Square:wght@400;700;800&display=swap" rel="stylesheet">'
+        '<style>*{font-family:\'Nanum Square\',\'Apple SD Gothic Neo\',\'Malgun Gothic\',sans-serif!important;}</style>'
+        '</head>'
+    )
+    return f'<!DOCTYPE html><html>{head}{H}</html>'
 
 
 # ── 주간 HTML ──────────────────────────────────────────────
@@ -787,7 +806,14 @@ def build_weekly_html(summary, ai_top, scm_top, top_kw, ai_cnt, scm_cnt):
 
     H += '<div style="padding:18px 32px;border-top:1px solid #eee;text-align:center;font-size:14px;color:#ccc;">📬 좋은 주말 보내세요 ✨</div>'
     H += '</div></body>'
-    return f'<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>{H}</html>'
+    head = (
+        '<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+        '<link rel="preconnect" href="https://fonts.googleapis.com">'
+        '<link href="https://fonts.googleapis.com/css2?family=Nanum+Square:wght@400;700;800&display=swap" rel="stylesheet">'
+        '<style>*{font-family:\'Nanum Square\',\'Apple SD Gothic Neo\',\'Malgun Gothic\',sans-serif!important;}</style>'
+        '</head>'
+    )
+    return f'<!DOCTYPE html><html>{head}{H}</html>'
 
 
 # ── 실행 ───────────────────────────────────────────────────
