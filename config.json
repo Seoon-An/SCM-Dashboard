@@ -6,7 +6,22 @@
     "재고최적화",
     "AI Agent"
   ],
-  "disabledFeeds": [],
+  "disabledFeeds": [
+    "Supply Chain Dive",
+    "FreightWaves",
+    "Modern Materials Handling",
+    "Logistics Management",
+    "코리아쉬핑가제트",
+    "전자신문",
+    "디지털타임스",
+    "TechCrunch AI",
+    "The Verge AI",
+    "VentureBeat AI",
+    "The Decoder",
+    "AI타임스",
+    "인공지능신문",
+    "한국경제"
+  ],
   "maxAiCards": 4,
   "maxScmCards": 4,
   "maxQuickHits": 10,
