@@ -7,8 +7,8 @@
     "AI Agent"
   ],
   "disabledFeeds": [],
-  "maxAiCards": 4,
-  "maxScmCards": 4,
+  "maxAiCards": 2,
+  "maxScmCards": 2,
   "maxQuickHits": 10,
   "topPerFeed": 2
 }
