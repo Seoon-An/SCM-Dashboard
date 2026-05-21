@@ -40,6 +40,8 @@ SCM_FEEDS = [
     {'name': 'DC Velocity',              'url': 'https://www.dcvelocity.com/rss/news/'},
     {'name': '물류신문',                   'url': 'https://www.klnews.co.kr/rss/allArticle.xml'},
     {'name': '코리아쉬핑가제트',            'url': 'https://www.ksg.co.kr/rss/allArticle.xml'},
+    {'name': '물류센터뉴스',               'url': 'https://news.google.com/rss/search?q=%EB%AC%BC%EB%A5%98%EC%84%BC%ED%84%B0&hl=ko&gl=KR&ceid=KR:ko'},
+    {'name': '물류부동산뉴스',              'url': 'https://news.google.com/rss/search?q=%EB%AC%BC%EB%A5%98%EB%B6%80%EB%8F%99%EC%82%B0+%EB%AC%BC%EB%A5%98%EC%B0%BD%EA%B3%A0&hl=ko&gl=KR&ceid=KR:ko'},
 ]
 
 HERO_KW = ['AI', '인공지능', 'SCM', '물류', '공급망', '자동화', '에이전트',
