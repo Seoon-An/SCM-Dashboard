@@ -8,7 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.x/dist/tabler-icons.min.css">
 <style>
-:root{--bg:#fff;--bg2:#f8f4ef;--bg3:#f0ebe3;--txt:#111827;--txt2:#6b7280;--txt3:#aaa;--bdr:rgba(0,0,0,0.08);--bdr2:rgba(0,0,0,0.14);--r:8px;--rl:12px;--coral:#E97451;--teal:#1E7E9E;}
+:root{--bg:#fff;--bg2:#f8f4ef;--bg3:#f0ebe3;--txt:#111827;--txt2:#6b7280;--txt3:#aaa;--bdr:rgba(0,0,0,0.08);--bdr2:rgba(0,0,0,0.14);--r:8px;--rl:12px;--coral:#C85A35;--teal:#175F7A;}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'DM Sans',sans-serif;background:var(--bg2);color:var(--txt);min-height:100vh;}
 .layout{display:flex;min-height:100vh;}
@@ -130,7 +130,7 @@ input:focus{border-color:var(--coral);background:var(--bg);}
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
         <div>
           <div class="pt">AI × SCM 메일 관리</div>
-          <div class="ps" style="margin:0;">매일 아침 + 매주 토요일 자동 발송</div>
+          <div class="ps" style="margin:0;">매일 아침 06:00 자동 발송</div>
         </div>
         <span class="stag"><span class="dot" id="syncDot"></span><span id="syncTxt">연동 확인 중...</span></span>
       </div>
@@ -160,13 +160,15 @@ input:focus{border-color:var(--coral);background:var(--bg);}
         <div class="card"><div class="ct" style="color:var(--teal);">📦 SCM 피드</div><div id="scmFeedList"></div></div>
       </div>
 
-      <!-- 버튼: 미리보기 발송 하나만 -->
       <div class="btn-row">
+        <button class="btn" style="background:var(--bg2);border:1px solid var(--bdr2);color:var(--txt);" id="saveBtn" onclick="saveSettings()">
+          <i class="ti ti-device-floppy"></i> 설정 저장
+        </button>
         <button class="btn btn-pri" id="testBtn" onclick="triggerWorkflow()">
-          <i class="ti ti-send"></i> 뉴스레터 미리보기 발송
+          <i class="ti ti-send"></i> 미리보기 발송
         </button>
       </div>
-      <div style="font-size:11px;color:var(--txt3);text-align:center;margin-top:6px;">설정을 저장하고 테스트 메일을 즉시 발송합니다</div>
+      <div style="font-size:11px;color:var(--txt3);text-align:center;margin-top:6px;">설정 저장 후 미리보기 발송 — GitHub 연동 설정의 PAT 토큰 필요</div>
       <div class="msg" id="msg2"></div>
     </section>
 
@@ -196,7 +198,7 @@ input:focus{border-color:var(--coral);background:var(--bg);}
 
 <script>
 const AI_FEEDS=['TechCrunch AI','The Verge AI','VentureBeat AI','The Decoder','AI타임스','인공지능신문'];
-const SCM_FEEDS=['Supply Chain Dive','FreightWaves','Modern Materials Handling','물류신문'];
+const SCM_FEEDS=['Supply Chain Dive','FreightWaves','Modern Materials Handling','Logistics Management','DC Velocity','물류신문','코리아쉬핑가제트'];
 
 let cfg={keywords:['수요예측','재고최적화','물류비 절감','AI agent'],disabledFeeds:[],maxAiCards:4,maxScmCards:4,maxQuickHits:12,topPerFeed:2};
 
@@ -267,6 +269,17 @@ async function saveToGithub(){
     const res=await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/config.json`,{method:'PUT',headers:{Authorization:`Bearer ${pat}`,'Content-Type':'application/json',Accept:'application/vnd.github+json'},body:JSON.stringify({message:'대시보드 설정 업데이트',content:btoa(unescape(encodeURIComponent(JSON.stringify(cfg,null,2)))),sha:fileD.sha})});
     return res.ok||res.status===200;
   }catch(e){return false;}
+}
+
+async function saveSettings(){
+  const {pat}=getGh();
+  if(!pat){setMsg('msg2','먼저 ⚙️ GitHub 연동 설정에서 PAT 토큰을 입력해주세요','#f59e0b');return;}
+  document.getElementById('saveBtn').disabled=true;
+  setMsg('msg2','저장 중...');
+  const saved=await saveToGithub();
+  if(saved)setMsg('msg2','✓ 설정이 저장됐습니다','#22c55e');
+  else setMsg('msg2','저장 실패 — 연동 설정의 토큰·권한을 확인해주세요','#E97451');
+  document.getElementById('saveBtn').disabled=false;
 }
 
 async function triggerWorkflow(){

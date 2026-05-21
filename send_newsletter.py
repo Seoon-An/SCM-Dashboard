@@ -36,7 +36,10 @@ SCM_FEEDS = [
     {'name': 'Supply Chain Dive',         'url': 'https://www.supplychaindive.com/feeds/news/'},
     {'name': 'FreightWaves',              'url': 'https://www.freightwaves.com/feed'},
     {'name': 'Modern Materials Handling', 'url': 'https://www.mmh.com/rss/articles'},
+    {'name': 'Logistics Management',      'url': 'https://www.logisticsmgmt.com/rss/news.xml'},
+    {'name': 'DC Velocity',              'url': 'https://www.dcvelocity.com/rss/news/'},
     {'name': '물류신문',                   'url': 'https://www.klnews.co.kr/rss/allArticle.xml'},
+    {'name': '코리아쉬핑가제트',            'url': 'https://www.ksg.co.kr/rss/allArticle.xml'},
 ]
 
 HERO_KW = ['AI', '인공지능', 'SCM', '물류', '공급망', '자동화', '에이전트',
