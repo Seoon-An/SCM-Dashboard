@@ -4,7 +4,8 @@
     "수요예측",
     "재고관리",
     "재고최적화",
-    "AI Agent"
+    "AI Agent",
+    "물류"
   ],
   "disabledFeeds": [],
   "maxAiCards": 5,
