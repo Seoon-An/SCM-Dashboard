@@ -84,23 +84,38 @@ def main():
     if not ai_raw and not scm_raw:
         print('새 기사 없음.'); return
 
-    per_feed = config.get('topPerFeed', 2)
-    ai_top   = pick_top(ai_raw,  per_feed, config.get('maxAiCards', 4) + 1, max_en=1)
-    scm_top  = pick_top(scm_raw, per_feed, config.get('maxScmCards', 4) + 1, max_en=1)
-    q_hits   = pick_quick_hits(ai_raw + scm_raw, ai_top + scm_top, config.get('maxQuickHits', 12))
+    ai_names = {f['name'] for f in AI_FEEDS}
+
+    # ── 히어로: 오늘자(24h) 기사 중 가장 핫한 것 (없으면 7일 내 최신)
+    today_since = datetime.now(timezone.utc) - timedelta(hours=24)
+    all_pool    = ai_raw + scm_raw
+    today_pool  = [a for a in all_pool if a['date'] >= today_since]
+    hero_pool   = today_pool if today_pool else all_pool
+    hero_pool.sort(key=lambda x: (_kw_score(x), x['date'].timestamp()), reverse=True)
+    hero_candidates = [a for a in hero_pool if any(kw.lower() in (a['title']+' '+a['description']).lower() for kw in HERO_KW)]
+    hero       = hero_candidates[0] if hero_candidates else hero_pool[0]
+    hero_color = AI_COLOR if hero['source'] in ai_names else SCM_COLOR
+
+    # ── AI/SCM 카드: 히어로 제외, 각각 설정 숫자 그대로
+    per_feed  = config.get('topPerFeed', 2)
+    ai_top    = pick_top([a for a in ai_raw  if a['link'] != hero['link']], per_feed, config.get('maxAiCards',  4), max_en=1)
+    scm_top   = pick_top([a for a in scm_raw if a['link'] != hero['link']], per_feed, config.get('maxScmCards', 4), max_en=1)
+    q_hits    = pick_quick_hits(ai_raw + scm_raw, [hero] + ai_top + scm_top, config.get('maxQuickHits', 12))
 
     print('이미지 수집 중...')
+    hero['og_image'] = fetch_og_image(hero['link'])
     for a in ai_top + scm_top:
         a['og_image'] = fetch_og_image(a['link'])
 
     print('인사이트 생성 중...')
-    summarize_batch(ai_top, is_ai=True)
+    summarize_batch([hero], is_ai=(hero['source'] in ai_names))
+    summarize_batch(ai_top,  is_ai=True)
     summarize_batch(scm_top, is_ai=False)
 
     print('에디터 노트 생성 중...')
     editor_note = gen_editor_note(ai_top, scm_top, q_hits)
 
-    html = build_html(editor_note, ai_top, scm_top, q_hits, len(ai_raw), len(scm_raw))
+    html = build_html(editor_note, hero, hero_color, ai_top, scm_top, q_hits, len(ai_raw), len(scm_raw))
     send_email(f'☕ [AI × SCM Daily] {kr_date(datetime.now())}', html)
     print('완료!')
 
@@ -599,15 +614,10 @@ def gen_briefing(ai_total, scm_total, all_articles):
         f'</div>'
     )
 
-def build_html(editor_note, ai_top, scm_top, q_hits, ai_total=0, scm_total=0):
+def build_html(editor_note, hero, hero_color, ai_top, scm_top, q_hits, ai_total=0, scm_total=0):
     ai_names = {f['name'] for f in AI_FEEDS}
-
-    combined  = sorted(ai_top + scm_top, key=lambda x: x['date'], reverse=True)
-    relevant  = [a for a in combined if any(kw.lower() in (a['title']+' '+a['description']).lower() for kw in HERO_KW)]
-    hero      = relevant[0] if relevant else combined[0]
-    hero_color= AI_COLOR if hero in ai_top else SCM_COLOR
-    ai_col    = [a for a in ai_top  if a is not hero]
-    scm_col   = [a for a in scm_top if a is not hero]
+    ai_col   = ai_top   # 히어로가 이미 제외된 상태
+    scm_col  = scm_top
 
     W = ('max-width:900px;margin:0 auto;background:#fff;'
          'font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;'
