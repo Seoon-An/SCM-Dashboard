@@ -69,6 +69,27 @@ def is_relevant(a):
     cfg_kw = [k.lower() for k in config.get('keywords', [])]
     return any(kw in text for kw in cfg_kw + _RELEVANCE_KW)
 
+# 헤드라인 중요도 점수 — 히어로 선정 기준
+_HEADLINE_POS = ['발표', '출시', '공개', '도입', '협약', '투자', '인수', '합병', '상장',
+                 '규제', '정책', '법안', '급등', '급락', '폭등', '폭락', '사상 최',
+                 '세계 최초', '국내 최초', '글로벌', '대규모', '파격', '혁신 발표']
+_HEADLINE_NEG = ['학술대회', '세미나', '포럼', '심포지엄', '컨퍼런스', '워크숍',
+                 '강연', '전시회', '박람회', '간담회', '시상식',
+                 '취임', '임명', '부임', '퇴임', '수상']
+_HIGH_AUTH_SOURCES = {'매일경제', '한국경제', '전자신문', '디지털타임스',
+                      'TechCrunch AI', 'The Verge AI', 'VentureBeat AI'}
+
+def _headline_score(a):
+    title = a['title'].lower()
+    text  = (a['title'] + ' ' + a['description']).lower()
+    score = _kw_score(a) * 2
+    score += sum(1 for kw in _HEADLINE_POS if kw in text)
+    score -= sum(3 for kw in _HEADLINE_NEG if kw in title)   # 제목에 있으면 강하게 감점
+    score -= sum(1 for kw in _HEADLINE_NEG if kw in text)
+    if a['source'] in _HIGH_AUTH_SOURCES:
+        score += 2
+    return score
+
 
 # ── 일간 메인 ──────────────────────────────────────────────
 def main():
@@ -91,10 +112,10 @@ def main():
     all_pool    = ai_raw + scm_raw
     today_pool  = [a for a in all_pool if a['date'] >= today_since]
     hero_pool   = today_pool if today_pool else all_pool
-    hero_pool.sort(key=lambda x: (_kw_score(x), x['date'].timestamp()), reverse=True)
-    # 히어로는 반드시 국문 기사
+    # 히어로는 반드시 국문 기사, 헤드라인 점수 기준으로 선정
     hero_pool_ko = [a for a in hero_pool if a['source'] not in EN_SOURCES]
-    hero_base    = hero_pool_ko if hero_pool_ko else hero_pool  # 국문 없으면 전체 fallback
+    hero_base    = hero_pool_ko if hero_pool_ko else hero_pool
+    hero_base.sort(key=lambda x: (_headline_score(x), x['date'].timestamp()), reverse=True)
     hero_candidates = [a for a in hero_base if any(kw.lower() in (a['title']+' '+a['description']).lower() for kw in HERO_KW)]
     hero       = hero_candidates[0] if hero_candidates else hero_base[0]
     hero_color = AI_COLOR if hero['source'] in ai_names else SCM_COLOR
