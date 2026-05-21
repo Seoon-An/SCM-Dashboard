@@ -92,8 +92,11 @@ def main():
     today_pool  = [a for a in all_pool if a['date'] >= today_since]
     hero_pool   = today_pool if today_pool else all_pool
     hero_pool.sort(key=lambda x: (_kw_score(x), x['date'].timestamp()), reverse=True)
-    hero_candidates = [a for a in hero_pool if any(kw.lower() in (a['title']+' '+a['description']).lower() for kw in HERO_KW)]
-    hero       = hero_candidates[0] if hero_candidates else hero_pool[0]
+    # 히어로는 반드시 국문 기사
+    hero_pool_ko = [a for a in hero_pool if a['source'] not in EN_SOURCES]
+    hero_base    = hero_pool_ko if hero_pool_ko else hero_pool  # 국문 없으면 전체 fallback
+    hero_candidates = [a for a in hero_base if any(kw.lower() in (a['title']+' '+a['description']).lower() for kw in HERO_KW)]
+    hero       = hero_candidates[0] if hero_candidates else hero_base[0]
     hero_color = AI_COLOR if hero['source'] in ai_names else SCM_COLOR
 
     # ── AI/SCM 카드: 히어로 제외, 각각 설정 숫자 그대로
@@ -196,9 +199,11 @@ def pick_top(arts, per_feed, max_total, max_en=1):
     # 전체도 키워드 점수 우선 정렬
     picked.sort(key=lambda x: (_kw_score(x), x['date'].timestamp()), reverse=True)
 
-    # 영문 기사 max_en개 초과분을 한국어로 대체
+    # 영문 max_en개 제한, 나머지는 한국어로 채우기
+    # ko_reserve는 전체 arts에서 뽑아야 per_feed 제한에 걸려도 빈 자리를 채울 수 있음
+    ko_reserve = sorted([a for a in arts if a['source'] not in EN_SOURCES],
+                        key=lambda x: (_kw_score(x), x['date'].timestamp()), reverse=True)
     result, en_count = [], 0
-    ko_reserve = [a for a in picked if a['source'] not in EN_SOURCES]
     for a in picked:
         if len(result) >= max_total:
             break
@@ -208,6 +213,7 @@ def pick_top(arts, per_feed, max_total, max_en=1):
                 en_count += 1
         else:
             result.append(a)
+    # 빈 자리를 전체 풀의 한국어 기사로 채우기
     used = {a['link'] for a in result}
     for a in ko_reserve:
         if len(result) >= max_total:
@@ -215,8 +221,11 @@ def pick_top(arts, per_feed, max_total, max_en=1):
         if a['link'] not in used:
             result.append(a)
             used.add(a['link'])
-    # 최종 출력은 키워드 점수 우선, 동점이면 최신순
-    return sorted(result, key=lambda x: (_kw_score(x), x['date'].timestamp()), reverse=True)[:max_total]
+    # 한국어 먼저, 영문 기사는 맨 아래
+    ko = sorted([a for a in result if a['source'] not in EN_SOURCES],
+                key=lambda x: (_kw_score(x), x['date'].timestamp()), reverse=True)
+    en = [a for a in result if a['source'] in EN_SOURCES]
+    return (ko + en)[:max_total]
 
 def pick_quick_hits(all_arts, picked, max_h):
     seen     = {a['link'] for a in picked}
