@@ -141,14 +141,21 @@ def clean(s):
 EN_SOURCES = {'TechCrunch AI', 'The Verge AI', 'VentureBeat AI', 'The Decoder',
               'Supply Chain Dive', 'FreightWaves', 'Modern Materials Handling'}
 
-def pick_top(arts, per_feed, max_total, max_en=2):
+def _kw_score(a):
+    """관심 키워드 매칭 수 — 많을수록 우선 노출."""
+    text = (a['title'] + ' ' + a['description']).lower()
+    return sum(1 for kw in config.get('keywords', []) if kw.lower() in text)
+
+def pick_top(arts, per_feed, max_total, max_en=1):
     by = {}
     for a in arts: by.setdefault(a['source'],[]).append(a)
     picked = []
     for arr in by.values():
-        arr.sort(key=lambda x: x['date'], reverse=True)
+        # 피드별로 키워드 점수 우선, 동점이면 최신순
+        arr.sort(key=lambda x: (_kw_score(x), x['date'].timestamp()), reverse=True)
         picked.extend(arr[:per_feed])
-    picked.sort(key=lambda x: x['date'], reverse=True)
+    # 전체도 키워드 점수 우선 정렬
+    picked.sort(key=lambda x: (_kw_score(x), x['date'].timestamp()), reverse=True)
 
     # 영문 기사 max_en개 초과분을 한국어로 대체
     result, en_count = [], 0
@@ -162,7 +169,6 @@ def pick_top(arts, per_feed, max_total, max_en=2):
                 en_count += 1
         else:
             result.append(a)
-    # 영문 제한으로 부족해진 자리를 한국어 기사로 채우기
     used = {a['link'] for a in result}
     for a in ko_reserve:
         if len(result) >= max_total:
@@ -170,7 +176,8 @@ def pick_top(arts, per_feed, max_total, max_en=2):
         if a['link'] not in used:
             result.append(a)
             used.add(a['link'])
-    return sorted(result, key=lambda x: x['date'], reverse=True)[:max_total]
+    # 최종 출력은 키워드 점수 우선, 동점이면 최신순
+    return sorted(result, key=lambda x: (_kw_score(x), x['date'].timestamp()), reverse=True)[:max_total]
 
 def pick_quick_hits(all_arts, picked, max_h):
     seen     = {a['link'] for a in picked}
@@ -401,31 +408,39 @@ _HIGHLIGHT_KW = (config.get('keywords', []) +
                  ['AI', '인공지능', 'SCM', '물류', '공급망', '자동화', '에이전트',
                   'FBA', '수요예측', '재고', '로봇', '이커머스', '관세', '운임'])
 
+_IMPACT_KW = ['최초', '최대', '최고', '역대', '급증', '급락', '급등', '대폭', '전격',
+              '세계 최', '국내 최', '사상 최', '혁신', '붕괴', '위기', '돌파']
+
 def highlight_title(title, color):
+    """제목: 관심키워드 배지 + 임팩트 표현 볼드."""
+    bg = AI_BG if color == AI_COLOR else SCM_BG
     result = esc(title)
-    for kw in sorted(_HIGHLIGHT_KW, key=len, reverse=True):
-        pattern = re.compile(re.escape(esc(kw)), re.IGNORECASE)
-        result = pattern.sub(
-            f'<strong style="color:{color};font-weight:700;">{esc(kw)}</strong>',
-            result, count=1
-        )
+    # 1. 관심 키워드 → 배지
+    for kw in sorted(config.get('keywords', []), key=len, reverse=True):
+        result = re.sub(re.escape(esc(kw)),
+            f'<span style="background:{bg};padding:1px 5px;border-radius:3px;font-weight:700;color:{color};">{esc(kw)}</span>',
+            result, count=1, flags=re.IGNORECASE)
+    # 2. 임팩트 표현 → 볼드
+    for kw in sorted(_IMPACT_KW, key=len, reverse=True):
+        result = result.replace(esc(kw), f'<strong style="color:{color};">{esc(kw)}</strong>', 1)
     return result
 
 def highlight_body(text, color):
+    """본문: 관심키워드 배지 + 숫자/퍼센트 볼드 + 임팩트 표현 볼드."""
     bg = AI_BG if color == AI_COLOR else SCM_BG
     result = esc(text)
-    for kw in sorted(_HIGHLIGHT_KW, key=len, reverse=True):
-        pattern = re.compile(re.escape(esc(kw)), re.IGNORECASE)
-        # 첫 번째 등장: 배지 스타일, 이후 등장: 볼드+색상
-        result = pattern.sub(
-            f'<span style="background:{bg};padding:1px 5px;border-radius:3px;'
-            f'font-weight:700;color:{color};">{esc(kw)}</span>',
-            result, count=1
-        )
-        result = pattern.sub(
-            f'<strong style="color:{color};">{esc(kw)}</strong>',
-            result
-        )
+    # 1. 관심 키워드 → 배지 (가장 눈에 띄게)
+    for kw in sorted(config.get('keywords', []), key=len, reverse=True):
+        result = re.sub(re.escape(esc(kw)),
+            f'<span style="background:{bg};padding:1px 5px;border-radius:3px;font-weight:700;color:{color};">{esc(kw)}</span>',
+            result, count=1, flags=re.IGNORECASE)
+    # 2. 수치+단위 → 볼드 (e.g. "30%", "1조원", "3배", "200억")
+    result = re.sub(
+        r'(\d[\d,]*(?:\.\d+)?(?:억|조|만|천)?(?:원|달러|위안|유로)?\s*(?:%|퍼센트|배|건|명|개))',
+        f'<strong style="color:{color};">\\1</strong>', result)
+    # 3. 임팩트 표현 → 볼드
+    for kw in sorted(_IMPACT_KW, key=len, reverse=True):
+        result = result.replace(esc(kw), f'<strong style="color:{color};">{esc(kw)}</strong>', 1)
     return result
 
 
