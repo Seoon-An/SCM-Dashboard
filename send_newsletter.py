@@ -691,10 +691,13 @@ def build_html(editor_note, hero, hero_color, ai_top, scm_top, q_hits, ai_total=
     scm_col  = scm_top
 
     W = ('max-width:900px;margin:0 auto;background:#fff;'
-         'font-family:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;'
+         'font-family:"Nanum Square","Apple SD Gothic Neo","Malgun Gothic",sans-serif;'
          'color:#111;line-height:1.6;')
 
-    H = f'<body style="margin:0;padding:20px 0;background:#efefef;"><div style="{W}">'
+    # <style>을 body 안에 넣어야 Gmail도 외부 폰트 허용
+    H = (f'<body style="margin:0;padding:20px 0;background:#efefef;">'
+         f'<style>@import url("https://fonts.googleapis.com/css2?family=Nanum+Square:wght@400;700;800&display=swap");</style>'
+         f'<div style="{W}">')
 
     # ── 헤더 (관심 키워드 배지 포함)
     cfg_kw = config.get('keywords', [])
@@ -776,12 +779,7 @@ def build_html(editor_note, hero, hero_color, ai_top, scm_top, q_hits, ai_total=
 
     H += '<div style="padding:18px 32px;border-top:1px solid #eee;text-align:center;font-size:14px;color:#ccc;">📬 좋은 하루 보내세요 ✨</div>'
     H += '</div></body>'
-    head = (
-        '<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-        '<link rel="preconnect" href="https://fonts.googleapis.com">'
-        '<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">'
-        '</head>'
-    )
+    head = '<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>'
     return f'<!DOCTYPE html><html>{head}{H}</html>'
 
 
@@ -855,12 +853,7 @@ def build_weekly_html(summary, ai_top, scm_top, top_kw, ai_cnt, scm_cnt):
 
     H += '<div style="padding:18px 32px;border-top:1px solid #eee;text-align:center;font-size:14px;color:#ccc;">📬 좋은 주말 보내세요 ✨</div>'
     H += '</div></body>'
-    head = (
-        '<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-        '<link rel="preconnect" href="https://fonts.googleapis.com">'
-        '<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">'
-        '</head>'
-    )
+    head = '<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>'
     return f'<!DOCTYPE html><html>{head}{H}</html>'
 
 
