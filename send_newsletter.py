@@ -58,8 +58,8 @@ def main():
         print('새 기사 없음.'); return
 
     per_feed = config.get('topPerFeed', 2)
-    ai_top   = pick_top(ai_raw,  per_feed, config.get('maxAiCards', 4) + 1)
-    scm_top  = pick_top(scm_raw, per_feed, config.get('maxScmCards', 4) + 1)
+    ai_top   = pick_top(ai_raw,  per_feed, config.get('maxAiCards', 4) + 1, max_en=1)
+    scm_top  = pick_top(scm_raw, per_feed, config.get('maxScmCards', 4) + 1, max_en=1)
     q_hits   = pick_quick_hits(ai_raw + scm_raw, ai_top + scm_top, config.get('maxQuickHits', 12))
 
     print('이미지 수집 중...')
@@ -134,7 +134,10 @@ def clean(s):
         s = s.replace(o,n)
     return re.sub(r'\s+',' ',s).strip()
 
-def pick_top(arts, per_feed, max_total):
+EN_SOURCES = {'TechCrunch AI', 'The Verge AI', 'VentureBeat AI', 'The Decoder',
+              'Supply Chain Dive', 'FreightWaves', 'Modern Materials Handling'}
+
+def pick_top(arts, per_feed, max_total, max_en=2):
     by = {}
     for a in arts: by.setdefault(a['source'],[]).append(a)
     picked = []
@@ -142,10 +145,28 @@ def pick_top(arts, per_feed, max_total):
         arr.sort(key=lambda x: x['date'], reverse=True)
         picked.extend(arr[:per_feed])
     picked.sort(key=lambda x: x['date'], reverse=True)
-    return picked[:max_total]
 
-EN_SOURCES = {'TechCrunch AI', 'The Verge AI', 'VentureBeat AI', 'The Decoder',
-              'Supply Chain Dive', 'FreightWaves', 'Modern Materials Handling'}
+    # 영문 기사 max_en개 초과분을 한국어로 대체
+    result, en_count = [], 0
+    ko_reserve = [a for a in picked if a['source'] not in EN_SOURCES]
+    for a in picked:
+        if len(result) >= max_total:
+            break
+        if a['source'] in EN_SOURCES:
+            if en_count < max_en:
+                result.append(a)
+                en_count += 1
+        else:
+            result.append(a)
+    # 영문 제한으로 부족해진 자리를 한국어 기사로 채우기
+    used = {a['link'] for a in result}
+    for a in ko_reserve:
+        if len(result) >= max_total:
+            break
+        if a['link'] not in used:
+            result.append(a)
+            used.add(a['link'])
+    return sorted(result, key=lambda x: x['date'], reverse=True)[:max_total]
 
 def pick_quick_hits(all_arts, picked, max_h):
     seen     = {a['link'] for a in picked}
@@ -245,10 +266,10 @@ def summarize_batch(articles, is_ai=True):
         return
     label = 'AI' if is_ai else 'SCM'
 
-    # ── Gemini 비활성화 상태: RSS 원문 그대로 사용 ──────────────
+    # ── Gemini 비활성화 상태: raw 텍스트 보관 (render 시 강조 적용) ──
     if not GEMINI_ENABLED:
         for a in articles:
-            a['summary'] = esc(a['description'][:300])
+            a['summary'] = a['description'][:300]   # raw — highlight_title이 escape 처리
             a['insight']  = ''
         print(f'  {label} summarize: Gemini 꺼짐, 원문 사용')
         return
@@ -378,11 +399,28 @@ _HIGHLIGHT_KW = (config.get('keywords', []) +
 
 def highlight_title(title, color):
     result = esc(title)
-    for kw in sorted(_HIGHLIGHT_KW, key=len, reverse=True):  # 긴 키워드 먼저 매칭
+    for kw in sorted(_HIGHLIGHT_KW, key=len, reverse=True):
         pattern = re.compile(re.escape(esc(kw)), re.IGNORECASE)
         result = pattern.sub(
             f'<strong style="color:{color};font-weight:700;">{esc(kw)}</strong>',
             result, count=1
+        )
+    return result
+
+def highlight_body(text, color):
+    bg = AI_BG if color == AI_COLOR else SCM_BG
+    result = esc(text)
+    for kw in sorted(_HIGHLIGHT_KW, key=len, reverse=True):
+        pattern = re.compile(re.escape(esc(kw)), re.IGNORECASE)
+        # 첫 번째 등장: 배지 스타일, 이후 등장: 볼드+색상
+        result = pattern.sub(
+            f'<span style="background:{bg};padding:1px 5px;border-radius:3px;'
+            f'font-weight:700;color:{color};">{esc(kw)}</span>',
+            result, count=1
+        )
+        result = pattern.sub(
+            f'<strong style="color:{color};">{esc(kw)}</strong>',
+            result
         )
     return result
 
@@ -392,7 +430,8 @@ def render_hero(a, color):
     link    = a['link']
     hl      = esc(a['title'])
     src     = esc(a['source'])
-    summary = a.get('summary') or esc(a['description'][:200])
+    _raw    = a.get('summary') or a['description'][:200]
+    summary = _raw if GEMINI_ENABLED else highlight_body(_raw, color)
     insight = a.get('insight', '')
     img     = a.get('og_image')
     bg      = AI_BG if color == AI_COLOR else SCM_BG
@@ -448,7 +487,8 @@ def render_card(a, color, placeholder_bg):
     link    = a['link']
     hl      = esc(a['title'])
     src     = esc(a['source'])
-    summary = a.get('summary') or esc(a['description'][:200])
+    _raw    = a.get('summary') or a['description'][:200]
+    summary = _raw if GEMINI_ENABLED else highlight_body(_raw, color)
     insight = a.get('insight', '')
     bg      = AI_BG if color == AI_COLOR else SCM_BG
 
