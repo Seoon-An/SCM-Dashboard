@@ -1,13 +1,11 @@
 {
   "keywords": [
-    "수요예측",
-    "재고최적화",
-    "물류비 절감",
-    "AI agent"
+    "물류창고",
+    "부동산"
   ],
   "disabledFeeds": [],
   "maxAiCards": 4,
-  "maxScmCards": 4,
+  "maxScmCards": 6,
   "maxQuickHits": 12,
   "topPerFeed": 2
 }
