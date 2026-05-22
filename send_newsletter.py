@@ -800,11 +800,11 @@ def build_html(editor_note, hero, hero_color, ai_top, scm_top, q_hits, ai_total=
     ai_names = {f['name'] for f in AI_FEEDS}
 
     W = ('max-width:780px;margin:0 auto;background:#fff;'
-         'font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic",sans-serif;'
+         'font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;'
          'color:#111;line-height:1.7;')
 
     H = (f'<body style="margin:0;padding:0;background:#e8e8e8;">'
-         f'<style>@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css");</style>'
+         f'<style>@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap");</style>'
          f'<div style="{W}">')
 
     # ── 다크 헤더
@@ -822,10 +822,10 @@ def build_html(editor_note, hero, hero_color, ai_top, scm_top, q_hits, ai_total=
     quote = gen_daily_quote()
     H += (f'<table width="100%" cellpadding="0" cellspacing="0" style="background:#111;">'
           f'<tr><td style="padding:36px 40px 30px;">'
-          f'<div style="font-size:10px;letter-spacing:4px;color:#555;font-weight:600;margin-bottom:16px;">AI × SCM DAILY</div>'
-          f'<div style="font-size:46px;font-weight:800;color:#fff;line-height:1.05;letter-spacing:-1.5px;">☕ 굿모닝!</div>'
-          f'<div style="font-size:16px;color:#888;margin-top:14px;font-style:italic;line-height:1.7;">{quote}</div>'
-          f'<div style="font-size:13px;color:#444;margin-top:10px;letter-spacing:0.3px;">{kr_date(datetime.now())}</div>'
+          f'<div style="font-size:10px;letter-spacing:4px;color:#666;font-weight:600;margin-bottom:16px;">AI × SCM DAILY</div>'
+          f'<div style="font-size:46px;font-weight:700;color:#fff;line-height:1.05;letter-spacing:-1px;">☕ 굿모닝!</div>'
+          f'<div style="font-size:15px;color:#bbb;margin-top:16px;font-style:italic;line-height:1.8;">{quote}</div>'
+          f'<div style="font-size:12px;color:#666;margin-top:10px;letter-spacing:0.5px;">{kr_date(datetime.now())}</div>'
           f'{kw_badge_html}'
           f'</td></tr></table>')
 
