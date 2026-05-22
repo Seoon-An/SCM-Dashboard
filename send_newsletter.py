@@ -842,18 +842,18 @@ def build_html(editor_note, hero, hero_color, ai_top, scm_top, q_hits, ai_total=
     H += render_hero(hero, hero_color)
 
     # ── AI 섹션
-    H += (f'<div style="padding:36px 40px 8px;">'
+    H += (f'<div style="padding:36px 20px 8px;">'
           f'<div style="display:inline-block;font-size:11px;font-weight:800;color:{AI_COLOR};'
           f'letter-spacing:2px;border-bottom:2px solid {AI_COLOR};padding-bottom:6px;margin-bottom:24px;">🤖 AI 이슈</div>'
           f'</div>')
-    H += f'<div style="padding:0 40px 12px;">{"".join(render_card(a, AI_COLOR, "#f5f0ec") for a in ai_top)}</div>'
+    H += f'<div style="padding:0 20px 12px;">{"".join(render_card(a, AI_COLOR, "#f5f0ec") for a in ai_top)}</div>'
 
     # ── SCM 섹션
-    H += (f'<div style="padding:20px 40px 8px;border-top:1px solid #f0f0f0;">'
+    H += (f'<div style="padding:20px 20px 8px;border-top:1px solid #f0f0f0;">'
           f'<div style="display:inline-block;font-size:11px;font-weight:800;color:{SCM_COLOR};'
           f'letter-spacing:2px;border-bottom:2px solid {SCM_COLOR};padding-bottom:6px;margin-bottom:24px;">📦 SCM 이슈</div>'
           f'</div>')
-    H += f'<div style="padding:0 40px 12px;">{"".join(render_card(a, SCM_COLOR, "#edf5f8") for a in scm_top)}</div>'
+    H += f'<div style="padding:0 20px 12px;">{"".join(render_card(a, SCM_COLOR, "#edf5f8") for a in scm_top)}</div>'
 
     # ── Quick Hits
     if q_hits:
