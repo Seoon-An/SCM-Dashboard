@@ -504,6 +504,27 @@ SCM 문단 → <strong style="color:#175F7A">핵심 어구</strong> 또는 <span
             import time; time.sleep(10)
     return ''
 
+def gen_daily_quote():
+    """Gemini로 매일 다른 동서양 철학/불교 명언 생성."""
+    if not GEMINI_ENABLED:
+        _day_seed = int(datetime.now().strftime('%Y%m%d'))
+        return MORNING_QUOTES[_day_seed % len(MORNING_QUOTES)]
+    prompt = f"""오늘 날짜 {datetime.now().strftime('%Y-%m-%d')} 에 어울리는 동서양 철학자 또는 불교 명언 하나를 선택해줘.
+
+조건:
+- 불교(붓다, 법구경, 선가어록), 동양철학(노자, 공자, 장자), 서양철학(소크라테스, 아리스토텔레스, 마르쿠스 아우렐리우스, 세네카, 에픽테토스, 플라톤 등) 중에서 선택
+- 반드시 실제 존재하는 명언만
+- 한국어로 번역
+- 딱 한 줄만: "명언 내용 — 출처" 형식으로 출력
+- 다른 설명, 따옴표, 마크다운 없이 한 줄만"""
+    result = call_gemini(prompt).strip()
+    result = re.sub(r'^["\']|["\']$', '', result).strip()
+    if result and '—' in result:
+        print(f'  오늘의 명언: {result[:60]}')
+        return result
+    _day_seed = int(datetime.now().strftime('%Y%m%d'))
+    return MORNING_QUOTES[_day_seed % len(MORNING_QUOTES)]
+
 def gemini_highlight_qhits(q_hits, ai_names):
     """Quick Hits 제목들을 Gemini로 핵심 어구 하이라이트 (1 API call)."""
     for a in q_hits:
@@ -798,8 +819,7 @@ def build_html(editor_note, hero, hero_color, ai_top, scm_top, q_hits, ai_total=
             for kw in cfg_kw
         ) + '</div>'
 
-    _day_seed = int(datetime.now().strftime('%Y%m%d'))
-    quote = MORNING_QUOTES[_day_seed % len(MORNING_QUOTES)]
+    quote = gen_daily_quote()
     H += (f'<table width="100%" cellpadding="0" cellspacing="0" style="background:#111;">'
           f'<tr><td style="padding:36px 40px 30px;">'
           f'<div style="font-size:10px;letter-spacing:4px;color:#555;font-weight:600;margin-bottom:16px;">AI × SCM DAILY</div>'
