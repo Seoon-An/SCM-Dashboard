@@ -3,7 +3,7 @@ AI × SCM Daily Newsletter
 """
 # 매일 KST 06:00 자동 발송 (GitHub Actions 스케줄)
 
-import json, os, re, sys, smtplib
+import json, os, re, sys, smtplib, random
 from datetime import datetime, timedelta, timezone
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -12,12 +12,27 @@ import feedparser, requests
 with open('config.json', encoding='utf-8') as f:
     config = json.load(f)
 
-GEMINI_KEY    = os.environ.get('GEMINI_API_KEY', '')   # Gemini 비활성화 시 없어도 무방
+GEMINI_KEY    = os.environ.get('GEMINI_API_KEY', '')
 GEMINI_MODEL  = 'gemini-2.0-flash'
-GEMINI_ENABLED = False   # ← Gemini API 준비되면 True로 변경
+GEMINI_ENABLED = True
 TO_EMAIL     = os.environ['TO_EMAIL']
 GMAIL_USER   = os.environ['GMAIL_ADDRESS']
 GMAIL_PASS   = os.environ['GMAIL_APP_PASSWORD']
+
+MORNING_QUOTES = [
+    "오늘도 흐름을 읽는 사람이 기회를 잡습니다 🌊",
+    "작은 정보 하나가 큰 결정을 바꿉니다 💡",
+    "변화는 불편하지만, 모르는 것보다 낫습니다 📡",
+    "데이터는 말하고, 실무자는 행동합니다 🚀",
+    "오늘의 뉴스가 내일의 전략이 됩니다 🗺️",
+    "빠르게 읽고, 깊게 생각하고, 바로 적용하세요 ⚡",
+    "글로벌 공급망은 오늘도 움직이고 있습니다 🌐",
+    "AI가 바꾸는 세상, 먼저 아는 것이 경쟁력입니다 🤖",
+    "좋은 하루의 시작은 좋은 정보에서 옵니다 ☀️",
+    "업계 흐름을 꿰뚫는 눈을 가진 당신, 오늘도 응원합니다 💪",
+    "변화의 속도를 따라가는 것, 그게 바로 전문가입니다 🎯",
+    "오늘 읽은 기사 하나가 다음 미팅의 인사이트가 됩니다 📊",
+]
 
 AI_COLOR  = '#C85A35'
 SCM_COLOR = '#175F7A'
@@ -393,18 +408,17 @@ def summarize_batch(articles, is_ai=True):
 
 각 기사마다 두 필드:
 - summary: 핵심 내용 2문장. 친절한 에디터 말투, 존댓말, 이모지 1~2개.
+  ★ 각 기사에서 가장 중요한 구절 1~2개를 아래 HTML 태그로 감쌀 것.
+  ★ 단순 키워드가 아닌, 기사의 핵심 팩트·수치·변화를 담은 구절을 골라야 함.
 - insight: FBA 이커머스·SCM 물류 실무 활용 인사이트 1~2문장. 이모지 1개. 해당 없으면 "".
 
-HTML 강조 (summary·insight 모두):
-- <strong style="color:{color}">강조 텍스트</strong>
-- <span style="background:{bg};padding:1px 6px;border-radius:3px;font-weight:600;font-size:12px;color:{color}">키워드</span>
-
-insight 예시:
-"이제 AI가 단순 보조를 넘어 <strong style="color:{color}">업무 자체를 대신 처리</strong>하는 시대가 됐습니다 💼 <span style="background:{bg};padding:1px 6px;border-radius:3px;font-weight:600;font-size:12px;color:{color}">발주서 자동화</span>에도 바로 응용할 수 있을 것 같아요!"
+HTML 강조 태그 (반드시 이 두 가지만 사용):
+- 핵심 구절: <strong style="color:{color}">구절</strong>
+- 핵심 키워드/수치: <span style="background:{bg};padding:1px 6px;border-radius:3px;font-weight:600;font-size:12px;color:{color}">텍스트</span>
 
 {items}
 
-JSON 배열로만 응답:
+JSON 배열로만 응답 (다른 텍스트 없이):
 [{{"summary":"...","insight":"..."}}, ...]"""
     for attempt in range(3):
         try:
@@ -732,10 +746,12 @@ def build_html(editor_note, hero, hero_color, ai_top, scm_top, q_hits, ai_total=
             for i, kw in enumerate(cfg_kw)
         ) + '</div>'
 
+    quote = random.choice(MORNING_QUOTES)
     H += (f'<div style="padding:22px 32px 16px;border-bottom:2.5px solid #111;">'
           f'<div style="font-size:12px;letter-spacing:2.5px;color:#aaa;margin-bottom:6px;font-weight:500;">AI × SCM DAILY</div>'
           f'<div style="font-size:28px;font-weight:700;line-height:1.2;">☕ 굿모닝!</div>'
-          f'<div style="font-size:14px;color:#aaa;margin-top:6px;">{kr_date(datetime.now())}</div>'
+          f'<div style="font-size:14px;color:#777;margin-top:8px;font-style:italic;">{quote}</div>'
+          f'<div style="font-size:13px;color:#aaa;margin-top:6px;">{kr_date(datetime.now())}</div>'
           f'{kw_badge_html}'
           f'</div>')
 
