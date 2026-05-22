@@ -182,6 +182,9 @@ def main():
     print('에디터 노트 생성 중...')
     editor_note = gen_editor_note(ai_top, scm_top, q_hits)
 
+    print('헤드라인 하이라이트 중...')
+    gemini_highlight_qhits(q_hits, ai_names)
+
     html = build_html(editor_note, hero, hero_color, ai_top, scm_top, q_hits, len(ai_raw), len(scm_raw))
     send_email(f'☕ [AI × SCM Daily] {kr_date(datetime.now())}', html)
     print('완료!')
@@ -466,10 +469,10 @@ def gen_editor_note(ai_top, scm_top, q_hits):
 두번째 문단 "📦 SCM —" 시작: 오늘 SCM 기사 중 실무자가 지금 주목해야 할 포인트 2~3문장
 친절한 존댓말. 특정 회사명·이직 언급 금지.
 
-HTML 강조:
-AI → <strong style="color:#C85A35">텍스트</strong> 또는 <span style="background:#FFF3E0;padding:1px 6px;border-radius:3px;font-weight:600;color:#C85A35;font-size:13px;">키워드</span>
-SCM → <strong style="color:#175F7A">텍스트</strong> 또는 <span style="background:#E3F2F8;padding:1px 6px;border-radius:3px;font-weight:600;color:#175F7A;font-size:13px;">키워드</span>
-위 태그만 사용. 문단 구분은 <br><br>.
+HTML 강조 (키워드 단순 매칭 금지 — 문장 안에서 실제로 핵심적인 어구·수치·변화를 담은 구절만 강조):
+AI 문단 → <strong style="color:#C85A35">핵심 어구</strong> 또는 <span style="background:#FFF3E0;padding:1px 6px;border-radius:3px;font-weight:600;color:#C85A35;font-size:13px;">핵심 어구</span>
+SCM 문단 → <strong style="color:#175F7A">핵심 어구</strong> 또는 <span style="background:#E3F2F8;padding:1px 6px;border-radius:3px;font-weight:600;color:#175F7A;font-size:13px;">핵심 어구</span>
+각 문단에서 2~3개 어구만 강조. 위 태그만 사용. 문단 구분은 <br><br>.
 
 에디터 노트만 출력 (다른 말 없이):"""
     for attempt in range(3):
@@ -482,6 +485,47 @@ SCM → <strong style="color:#175F7A">텍스트</strong> 또는 <span style="bac
         if attempt < 2:
             import time; time.sleep(10)
     return ''
+
+def gemini_highlight_qhits(q_hits, ai_names):
+    """Quick Hits 제목들을 Gemini로 핵심 어구 하이라이트 (1 API call)."""
+    for a in q_hits:
+        a['title_hl'] = esc(a['title'])  # 기본값
+    if not q_hits or not GEMINI_ENABLED:
+        return
+
+    items = '\n'.join([
+        f'{i+1}. [{"AI" if a["source"] in ai_names else "SCM"}] {a["title"]}'
+        for i, a in enumerate(q_hits)
+    ])
+    prompt = f"""다음 뉴스 제목들 각각에서, 제목 안의 가장 핵심적인 어구 1개에만 HTML 강조 태그를 추가해줘.
+
+규칙:
+- 제목 원문을 그대로 유지하고 강조할 어구만 태그로 감쌀 것
+- 키워드 단순 매칭 금지 (AI, 물류 등 일반 단어 단독 강조 금지)
+- 회사명+행동, 수치, 핵심 변화를 담은 구절 우선 선택
+- 정확히 1개 어구만 강조
+
+AI 기사: <strong style="color:{AI_COLOR}">어구</strong>
+SCM 기사: <strong style="color:{SCM_COLOR}">어구</strong>
+
+{items}
+
+JSON 배열로만 응답 (번호 순서 유지, 강조 태그 포함된 제목 전체):
+["제목1", "제목2", ...]"""
+
+    try:
+        raw = call_gemini(prompt)
+        if not raw:
+            raise ValueError('빈 응답')
+        m = re.search(r'\[.*\]', raw, re.DOTALL)
+        results = json.loads(m.group() if m else raw)
+        for i, a in enumerate(q_hits):
+            if i < len(results) and results[i]:
+                a['title_hl'] = results[i]
+        print('  Quick Hits 하이라이트 완료')
+    except Exception as e:
+        print(f'  Quick Hits 하이라이트 실패: {e}')
+
 
 def gen_weekly_summary(ai_top, scm_top, top_kw):
     ai_t  = [a['title'] for a in ai_top[:5]]
@@ -794,7 +838,7 @@ def build_html(editor_note, hero, hero_color, ai_top, scm_top, q_hits, ai_total=
             tc  = AI_COLOR if is_ai else SCM_COLOR
             tl  = 'AI' if is_ai else 'SCM'
             bd  = 'border-bottom:1px solid #eee;' if i < len(q_hits)-1 else ''
-            ttl = highlight_title(a['title'], tc)
+            ttl = a.get('title_hl') or esc(a['title'])
             rows += (
                 f'<table width="100%" cellpadding="0" cellspacing="0" style="{bd}padding:0;">'
                 f'<tr>'
