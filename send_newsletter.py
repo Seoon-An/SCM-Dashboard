@@ -364,8 +364,10 @@ def fetch_og_image(url):
 
 def call_gemini(prompt, as_json=False):
     url  = f'https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent?key={GEMINI_KEY}'
-    body = {'contents':[{'parts':[{'text':prompt}]}]}
-    # JSON 모드 제거 — HTML 태그 포함 프롬프트에서 strict JSON 모드가 실패하는 경우 방지
+    body = {
+        'contents': [{'parts': [{'text': prompt}]}],
+        'generationConfig': {'thinkingConfig': {'thinkingBudget': 0}},  # thinking 비활성화 → 속도 개선
+    }
     r = requests.post(url, json=body, timeout=60)
     data = r.json()
     # 디버그: 응답 전체 구조 출력
