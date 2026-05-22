@@ -785,7 +785,8 @@ def build_html(editor_note, hero, hero_color, ai_top, scm_top, q_hits, ai_total=
             for kw in cfg_kw
         ) + '</div>'
 
-    quote = random.choice(MORNING_QUOTES)
+    _day_seed = int(datetime.now().strftime('%Y%m%d'))
+    quote = MORNING_QUOTES[_day_seed % len(MORNING_QUOTES)]
     H += (f'<table width="100%" cellpadding="0" cellspacing="0" style="background:#111;">'
           f'<tr><td style="padding:36px 40px 30px;">'
           f'<div style="font-size:10px;letter-spacing:4px;color:#555;font-weight:600;margin-bottom:16px;">AI × SCM DAILY</div>'
