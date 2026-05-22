@@ -419,7 +419,7 @@ def summarize_batch(articles, is_ai=True):
 
 HTML 강조 태그 (반드시 이 두 가지만 사용):
 - 핵심 구절: <strong style="color:{color}">구절</strong>
-- 핵심 키워드/수치: <span style="background:{bg};padding:1px 6px;border-radius:3px;font-weight:600;font-size:12px;color:{color}">텍스트</span>
+- 핵심 키워드/수치: <span style="background:{bg};padding:1px 6px;border-radius:3px;font-weight:600;color:{color}">텍스트</span>
 
 {items}
 
@@ -472,8 +472,8 @@ def gen_editor_note(ai_top, scm_top, q_hits):
 친절한 존댓말. 특정 회사명·이직 언급 금지.
 
 HTML 강조 (키워드 단순 매칭 금지 — 문장 안에서 실제로 핵심적인 어구·수치·변화를 담은 구절만 강조):
-AI 문단 → <strong style="color:#C85A35">핵심 어구</strong> 또는 <span style="background:#FFF3E0;padding:1px 6px;border-radius:3px;font-weight:600;color:#C85A35;font-size:13px;">핵심 어구</span>
-SCM 문단 → <strong style="color:#175F7A">핵심 어구</strong> 또는 <span style="background:#E3F2F8;padding:1px 6px;border-radius:3px;font-weight:600;color:#175F7A;font-size:13px;">핵심 어구</span>
+AI 문단 → <strong style="color:#C85A35">핵심 어구</strong> 또는 <span style="background:#FFF3E0;padding:1px 6px;border-radius:3px;font-weight:600;color:#C85A35;">핵심 어구</span>
+SCM 문단 → <strong style="color:#175F7A">핵심 어구</strong> 또는 <span style="background:#E3F2F8;padding:1px 6px;border-radius:3px;font-weight:600;color:#175F7A;">핵심 어구</span>
 각 문단에서 2~3개 어구만 강조. 위 태그만 사용. 문단 구분은 <br><br>.
 
 에디터 노트만 출력 (다른 말 없이):"""
@@ -771,12 +771,12 @@ def build_html(editor_note, hero, hero_color, ai_top, scm_top, q_hits, ai_total=
     scm_col  = scm_top
 
     W = ('max-width:900px;margin:0 auto;background:#fff;'
-         'font-family:"Nanum Square","Apple SD Gothic Neo","Malgun Gothic",sans-serif;'
+         'font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic",sans-serif;'
          'color:#111;line-height:1.6;')
 
     # <style>을 body 안에 넣어야 Gmail도 외부 폰트 허용
     H = (f'<body style="margin:0;padding:20px 0;background:#efefef;">'
-         f'<style>@import url("https://fonts.googleapis.com/css2?family=Nanum+Square:wght@400;700;800&display=swap");</style>'
+         f'<style>@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css");</style>'
          f'<div style="{W}">')
 
     # ── 헤더 (관심 키워드 배지 포함)
