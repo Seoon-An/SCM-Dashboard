@@ -2,7 +2,7 @@ name: Daily Newsletter
 
 on:
   schedule:
-    - cron: '0 21 * * *'
+    - cron: '5 21 * * *'
   workflow_dispatch:
 
 jobs:
