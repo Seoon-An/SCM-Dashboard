@@ -646,48 +646,43 @@ def render_hero(a, color):
     bg      = AI_BG if color == AI_COLOR else SCM_BG
 
     if img:
-        # 썸네일 이미지가 있을 때: 이미지 + 컬러 타이틀 바
-        top_html = (
+        img_html = (
             f'<a href="{link}" style="display:block;text-decoration:none;">'
-            f'<img src="{img}" alt="" width="100%" style="display:block;width:100%;height:220px;object-fit:cover;border:0;"></a>'
-            f'<a href="{link}" style="display:block;text-decoration:none;">'
-            f'<div style="background:{color};padding:16px 26px;">'
-            f'<div style="font-size:12px;letter-spacing:2px;color:rgba(255,255,255,0.7);font-weight:600;margin-bottom:6px;">🌟 오늘의 하이라이트</div>'
-            f'<div style="font-size:20px;font-weight:700;color:#fff;line-height:1.35;">{hl}</div>'
-            f'<div style="font-size:13px;color:rgba(255,255,255,0.55);margin-top:6px;">{src}</div>'
-            f'</div></a>'
+            f'<img src="{img}" alt="" width="100%" style="display:block;width:100%;height:320px;object-fit:cover;border:0;"></a>'
         )
     else:
-        # 썸네일 없을 때: 컬러 블록 안에 텍스트 하단 정렬
-        top_html = (
-            f'<a href="{link}" style="display:block;text-decoration:none;">'
-            f'<table width="100%" cellpadding="0" cellspacing="0" style="background:{color};height:220px;">'
-            f'<tr><td valign="bottom" style="padding:20px 26px;">'
-            f'<div style="font-size:12px;letter-spacing:2px;color:rgba(255,255,255,0.7);font-weight:600;margin-bottom:8px;">🌟 오늘의 하이라이트</div>'
-            f'<div style="font-size:20px;font-weight:700;color:#fff;line-height:1.35;">{hl}</div>'
-            f'<div style="font-size:13px;color:rgba(255,255,255,0.55);margin-top:8px;">{src}</div>'
-            f'</td></tr></table></a>'
+        img_html = (
+            f'<table width="100%" cellpadding="0" cellspacing="0" style="background:{color};opacity:0.15;height:200px;">'
+            f'<tr><td></td></tr></table>'
         )
 
     insight_html = ''
     if insight:
         insight_html = (
-            f'<div style="margin-top:12px;">'
-            f'<div style="font-size:12px;font-weight:700;color:{color};letter-spacing:0.3px;margin-bottom:5px;">💡 인사이트</div>'
-            f'<div style="font-size:14px;color:#555;line-height:1.8;padding:10px 14px;background:{bg};border-radius:6px;">{insight}</div>'
+            f'<div style="margin-top:14px;padding:12px 16px;background:{bg};border-left:3px solid {color};border-radius:0 6px 6px 0;">'
+            f'<div style="font-size:11px;font-weight:700;color:{color};letter-spacing:1px;margin-bottom:5px;">💡 INSIGHT</div>'
+            f'<div style="font-size:14px;color:#444;line-height:1.8;">{insight}</div>'
             f'</div>'
         )
 
-    hero_label = (f'<div style="font-size:12px;font-weight:700;color:{color};letter-spacing:0.3px;margin-bottom:5px;">📌 핵심 요약</div>'
-                  if GEMINI_ENABLED else '')
-
     return (
-        f'<div style="border-radius:10px;overflow:hidden;border:1px solid #e8e8e8;margin-bottom:24px;">'
-        f'{top_html}'
-        f'<div style="padding:20px 26px;background:#fff;border-top:1px solid #eee;">'
-        f'{hero_label}'
-        f'<div style="font-size:15px;color:#444;line-height:1.8;">{summary}</div>'
+        f'<div style="margin-bottom:0;overflow:hidden;">'
+        f'{img_html}'
+        f'<table width="100%" cellpadding="0" cellspacing="0" style="background:{color};">'
+        f'<tr><td style="padding:18px 32px 22px;">'
+        f'<div style="font-size:10px;letter-spacing:3px;color:rgba(255,255,255,0.55);font-weight:700;margin-bottom:10px;">🌟 오늘의 하이라이트</div>'
+        f'<a href="{link}" style="text-decoration:none;">'
+        f'<div style="font-size:24px;font-weight:800;color:#fff;line-height:1.3;">{hl}</div>'
+        f'</a>'
+        f'<div style="font-size:12px;color:rgba(255,255,255,0.45);margin-top:8px;">{src}</div>'
+        f'</td></tr></table>'
+        f'<div style="padding:22px 32px 28px;background:#fff;">'
+        f'<div style="font-size:15px;color:#333;line-height:1.9;">{summary}</div>'
         f'{insight_html}'
+        f'<div style="margin-top:18px;">'
+        f'<a href="{link}" style="display:inline-block;padding:9px 22px;background:{color};color:#fff;'
+        f'font-size:13px;font-weight:700;text-decoration:none;border-radius:4px;">기사 읽기 →</a>'
+        f'</div>'
         f'</div></div>'
     )
 
@@ -703,36 +698,35 @@ def render_card(a, color, placeholder_bg):
 
     if img:
         thumb = (f'<a href="{link}" style="display:block;text-decoration:none;">'
-                 f'<img src="{img}" alt="" width="100%" style="display:block;width:100%;height:140px;object-fit:cover;border:0;"></a>')
+                 f'<img src="{img}" alt="" width="100%" style="display:block;width:100%;height:160px;object-fit:cover;border:0;"></a>')
     else:
         thumb = (f'<a href="{link}" style="display:block;text-decoration:none;">'
-                 f'<table width="100%" cellpadding="0" cellspacing="0" style="background:{placeholder_bg};height:130px;">'
-                 f'<tr><td align="center" valign="middle" style="color:#ccc;font-size:13px;">썸네일</td></tr>'
-                 f'</table></a>')
+                 f'<table width="100%" cellpadding="0" cellspacing="0" style="background:{placeholder_bg};height:120px;">'
+                 f'<tr><td align="center" valign="middle">'
+                 f'<div style="width:36px;height:4px;background:{color};opacity:0.3;border-radius:2px;margin:0 auto;"></div>'
+                 f'</td></tr></table></a>')
 
     insight_html = ''
     if insight:
         insight_html = (
-            f'<div style="margin-top:10px;">'
-            f'<div style="font-size:12px;font-weight:700;color:{color};margin-bottom:4px;">💡 인사이트</div>'
-            f'<div style="font-size:13px;color:#555;line-height:1.7;padding:8px 10px;background:{bg};border-radius:5px;">{insight}</div>'
+            f'<div style="margin-top:12px;padding:10px 12px;background:{bg};border-left:3px solid {color};border-radius:0 4px 4px 0;">'
+            f'<div style="font-size:11px;font-weight:700;color:{color};letter-spacing:1px;margin-bottom:4px;">💡 INSIGHT</div>'
+            f'<div style="font-size:12px;color:#555;line-height:1.7;">{insight}</div>'
             f'</div>'
         )
 
-    summary_label = (f'<div style="font-size:12px;font-weight:700;color:{color};margin-bottom:4px;">📌 핵심 요약</div>'
-                     if GEMINI_ENABLED else '')
-
     return (
-        f'<div style="margin-bottom:18px;border-radius:8px;overflow:hidden;border:1px solid #e8e8e8;background:#fff;">'
+        f'<div style="margin-bottom:20px;overflow:hidden;border-top:3px solid {color};background:#fff;border-bottom:1px solid #eee;">'
         f'{thumb}'
-        f'<div style="padding:14px 16px;">'
+        f'<div style="padding:14px 16px 16px;">'
         f'<a href="{link}" style="text-decoration:none;">'
-        f'<div style="font-size:15px;font-weight:700;color:#111;line-height:1.4;margin-bottom:10px;">{hl}</div>'
+        f'<div style="font-size:15px;font-weight:700;color:#111;line-height:1.45;margin-bottom:8px;">{hl}</div>'
         f'</a>'
-        f'{summary_label}'
-        f'<div style="font-size:14px;color:#444;line-height:1.75;">{summary}</div>'
+        f'<div style="font-size:13px;color:#555;line-height:1.8;">{summary}</div>'
         f'{insight_html}'
-        f'<div style="font-size:12px;color:#bbb;margin-top:10px;">{src}</div>'
+        f'<div style="margin-top:10px;">'
+        f'<span style="font-size:11px;font-weight:600;color:{color};">{src}</span>'
+        f'</div>'
         f'</div></div>'
     )
 
@@ -767,70 +761,82 @@ def gen_briefing(ai_total, scm_total, all_articles):
 
 def build_html(editor_note, hero, hero_color, ai_top, scm_top, q_hits, ai_total=0, scm_total=0):
     ai_names = {f['name'] for f in AI_FEEDS}
-    ai_col   = ai_top   # 히어로가 이미 제외된 상태
-    scm_col  = scm_top
 
-    W = ('max-width:900px;margin:0 auto;background:#fff;'
+    W = ('max-width:680px;margin:0 auto;background:#fff;'
          'font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic",sans-serif;'
          'color:#111;line-height:1.6;')
 
-    # <style>을 body 안에 넣어야 Gmail도 외부 폰트 허용
-    H = (f'<body style="margin:0;padding:20px 0;background:#efefef;">'
+    H = (f'<body style="margin:0;padding:0;background:#e8e8e8;">'
          f'<style>@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css");</style>'
          f'<div style="{W}">')
 
-    # ── 헤더 (관심 키워드 배지 포함)
+    # ── 다크 헤더
     cfg_kw = config.get('keywords', [])
     kw_badge_html = ''
     if cfg_kw:
-        colors = [AI_COLOR, SCM_COLOR] * 10
-        kw_badge_html = '<div style="margin-top:10px;">' + ''.join(
-            f'<span style="display:inline-block;margin:3px 4px 3px 0;padding:3px 11px;'
-            f'background:{colors[i%2]}15;border:1px solid {colors[i%2]}50;'
-            f'border-radius:20px;font-size:12px;font-weight:600;color:{colors[i%2]};">'
+        kw_badge_html = '<div style="margin-top:14px;">' + ''.join(
+            f'<span style="display:inline-block;margin:3px 4px 3px 0;padding:3px 12px;'
+            f'background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);'
+            f'border-radius:20px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.7);">'
             f'{esc(kw)}</span>'
-            for i, kw in enumerate(cfg_kw)
+            for kw in cfg_kw
         ) + '</div>'
 
     quote = random.choice(MORNING_QUOTES)
-    H += (f'<div style="padding:22px 32px 16px;border-bottom:2.5px solid #111;">'
-          f'<div style="font-size:12px;letter-spacing:2.5px;color:#aaa;margin-bottom:6px;font-weight:500;">AI × SCM DAILY</div>'
-          f'<div style="font-size:28px;font-weight:700;line-height:1.2;">☕ 굿모닝!</div>'
-          f'<div style="font-size:14px;color:#777;margin-top:8px;font-style:italic;">{quote}</div>'
-          f'<div style="font-size:13px;color:#aaa;margin-top:6px;">{kr_date(datetime.now())}</div>'
+    H += (f'<table width="100%" cellpadding="0" cellspacing="0" style="background:#111;">'
+          f'<tr><td style="padding:30px 32px 26px;">'
+          f'<div style="font-size:10px;letter-spacing:4px;color:#666;font-weight:600;margin-bottom:14px;">AI × SCM DAILY</div>'
+          f'<div style="font-size:40px;font-weight:800;color:#fff;line-height:1.1;letter-spacing:-1px;">☕ 굿모닝!</div>'
+          f'<div style="font-size:15px;color:#999;margin-top:12px;font-style:italic;line-height:1.6;">{quote}</div>'
+          f'<div style="font-size:12px;color:#555;margin-top:8px;">{kr_date(datetime.now())}</div>'
           f'{kw_badge_html}'
-          f'</div>')
+          f'</td></tr></table>')
 
-    # ── Gemini ON: 에디터 노트 / Gemini OFF: 기사 통계 + 키워드 브리핑
+    # ── 에디터 노트 (크림 배경)
     if editor_note:
-        H += (f'<div style="padding:18px 32px;border-bottom:1px solid #eee;">'
-              f'<div style="font-size:12px;letter-spacing:2px;color:#bbb;font-weight:600;margin-bottom:10px;">📝 오늘의 한 마디</div>'
-              f'<div style="font-size:15px;color:#333;line-height:1.9;">{editor_note}</div>'
+        H += (f'<div style="padding:24px 32px;background:#FFF8F3;border-bottom:1px solid #f0e8e0;">'
+              f'<div style="font-size:10px;letter-spacing:3px;color:{AI_COLOR};font-weight:700;margin-bottom:12px;">📝 오늘의 한 마디</div>'
+              f'<div style="font-size:15px;color:#333;line-height:2;">{editor_note}</div>'
               f'</div>')
     else:
         H += gen_briefing(ai_total, scm_total, ai_top + scm_top + q_hits)
 
-    # ── 히어로
-    H += f'<div style="padding:24px 32px 0;">{render_hero(hero, hero_color)}</div>'
+    # ── 히어로 (풀블리드)
+    H += render_hero(hero, hero_color)
 
-    # ── 2단 (table — Gmail 호환)
-    def col_header(emoji, label, color):
-        return (f'<div style="font-size:16px;font-weight:800;color:{color};'
-                f'padding-bottom:10px;border-bottom:2.5px solid {color};margin-bottom:16px;">'
-                f'{emoji} {label}</div>')
+    # ── AI 섹션 헤더
+    H += (f'<table width="100%" cellpadding="0" cellspacing="0" style="background:{AI_COLOR};">'
+          f'<tr><td style="padding:14px 32px;">'
+          f'<div style="font-size:13px;font-weight:800;color:#fff;letter-spacing:1px;">🤖 AI 이슈</div>'
+          f'</td></tr></table>')
 
-    ai_cards   = ''.join(render_card(a, AI_COLOR,  '#f5f0ec') for a in ai_col)
-    scm_cards  = ''.join(render_card(a, SCM_COLOR, '#edf5f8') for a in scm_col)
+    # ── AI 카드 (2열)
+    ai_left  = ai_top[::2]
+    ai_right = ai_top[1::2]
+    ai_left_html  = ''.join(render_card(a, AI_COLOR, '#f5f0ec') for a in ai_left)
+    ai_right_html = ''.join(render_card(a, AI_COLOR, '#f5f0ec') for a in ai_right)
+    H += (f'<table width="100%" cellpadding="0" cellspacing="0" style="background:#fff;">'
+          f'<tr>'
+          f'<td width="50%" valign="top" style="padding:20px 10px 20px 24px;">{ai_left_html}</td>'
+          f'<td width="50%" valign="top" style="padding:20px 24px 20px 10px;">{ai_right_html}</td>'
+          f'</tr></table>')
 
-    H += (f'<div style="padding:0 32px 24px;">'
-          f'<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;"><tr>'
-          f'<td width="50%" valign="top" style="padding-right:9px;">'
-          f'{col_header("🤖","AI 이슈", AI_COLOR)}{ai_cards}'
-          f'</td>'
-          f'<td width="50%" valign="top" style="padding-left:9px;">'
-          f'{col_header("📦","SCM 이슈", SCM_COLOR)}{scm_cards}'
-          f'</td>'
-          f'</tr></table></div>')
+    # ── SCM 섹션 헤더
+    H += (f'<table width="100%" cellpadding="0" cellspacing="0" style="background:{SCM_COLOR};">'
+          f'<tr><td style="padding:14px 32px;">'
+          f'<div style="font-size:13px;font-weight:800;color:#fff;letter-spacing:1px;">📦 SCM 이슈</div>'
+          f'</td></tr></table>')
+
+    # ── SCM 카드 (2열)
+    scm_left  = scm_top[::2]
+    scm_right = scm_top[1::2]
+    scm_left_html  = ''.join(render_card(a, SCM_COLOR, '#edf5f8') for a in scm_left)
+    scm_right_html = ''.join(render_card(a, SCM_COLOR, '#edf5f8') for a in scm_right)
+    H += (f'<table width="100%" cellpadding="0" cellspacing="0" style="background:#fff;">'
+          f'<tr>'
+          f'<td width="50%" valign="top" style="padding:20px 10px 20px 24px;">{scm_left_html}</td>'
+          f'<td width="50%" valign="top" style="padding:20px 24px 20px 10px;">{scm_right_html}</td>'
+          f'</tr></table>')
 
     # ── Quick Hits
     if q_hits:
@@ -839,27 +845,28 @@ def build_html(editor_note, hero, hero_color, ai_top, scm_top, q_hits, ai_total=
             is_ai = a['source'] in ai_names
             tc  = AI_COLOR if is_ai else SCM_COLOR
             tl  = 'AI' if is_ai else 'SCM'
-            bd  = 'border-bottom:1px solid #eee;' if i < len(q_hits)-1 else ''
+            bd  = 'border-bottom:1px solid #f0f0f0;' if i < len(q_hits)-1 else ''
             ttl = a.get('title_hl') or esc(a['title'])
             rows += (
-                f'<table width="100%" cellpadding="0" cellspacing="0" style="{bd}padding:0;">'
+                f'<table width="100%" cellpadding="0" cellspacing="0" style="{bd}">'
                 f'<tr>'
-                # 배지 셀: 고정 너비로 제목 시작점 통일
-                f'<td width="52" style="width:52px;padding:9px 10px 9px 0;vertical-align:middle;">'
-                f'<span style="display:inline-block;width:48px;text-align:center;font-size:11px;'
-                f'font-weight:700;color:#fff;background:{tc};padding:3px 0;border-radius:20px;">{tl}</span>'
+                f'<td width="44" style="padding:11px 10px 11px 0;vertical-align:middle;">'
+                f'<span style="display:inline-block;width:36px;text-align:center;font-size:10px;'
+                f'font-weight:700;color:#fff;background:{tc};padding:3px 0;border-radius:3px;">{tl}</span>'
                 f'</td>'
-                # 제목 셀
-                f'<td style="padding:9px 0;vertical-align:middle;">'
-                f'<a href="{a["link"]}" style="font-size:14px;color:#333;text-decoration:none;line-height:1.5;">{ttl}</a>'
+                f'<td style="padding:11px 0;vertical-align:middle;">'
+                f'<a href="{a["link"]}" style="font-size:14px;color:#222;text-decoration:none;line-height:1.5;">{ttl}</a>'
                 f'</td>'
                 f'</tr></table>'
             )
-        H += (f'<div style="padding:18px 32px;background:#fafafa;border-top:1px solid #eee;">'
-              f'<div style="font-size:13px;letter-spacing:1.5px;color:#aaa;font-weight:600;margin-bottom:6px;">⚡ 빠르게 보는 헤드라인</div>'
+        H += (f'<div style="padding:22px 32px 24px;background:#f7f7f7;border-top:3px solid #111;">'
+              f'<div style="font-size:10px;letter-spacing:3px;color:#999;font-weight:700;margin-bottom:14px;">⚡ 빠르게 보는 헤드라인</div>'
               f'{rows}</div>')
 
-    H += '<div style="padding:18px 32px;border-top:1px solid #eee;text-align:center;font-size:14px;color:#ccc;">📬 좋은 하루 보내세요 ✨</div>'
+    H += (f'<table width="100%" cellpadding="0" cellspacing="0" style="background:#111;">'
+          f'<tr><td style="padding:20px 32px;text-align:center;">'
+          f'<div style="font-size:12px;color:#555;">📬 AI × SCM Daily &nbsp;·&nbsp; 좋은 하루 보내세요 ✨</div>'
+          f'</td></tr></table>')
     H += '</div></body>'
     head = '<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>'
     return f'<!DOCTYPE html><html>{head}{H}</html>'
