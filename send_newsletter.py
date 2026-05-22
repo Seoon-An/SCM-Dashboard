@@ -669,14 +669,14 @@ def render_hero(a, color):
         f'<div style="margin-bottom:0;overflow:hidden;">'
         f'{img_html}'
         f'<table width="100%" cellpadding="0" cellspacing="0" style="background:{color};">'
-        f'<tr><td style="padding:18px 32px 22px;">'
+        f'<tr><td style="padding:22px 40px 26px;">'
         f'<div style="font-size:10px;letter-spacing:3px;color:rgba(255,255,255,0.55);font-weight:700;margin-bottom:10px;">🌟 오늘의 하이라이트</div>'
         f'<a href="{link}" style="text-decoration:none;">'
         f'<div style="font-size:24px;font-weight:800;color:#fff;line-height:1.3;">{hl}</div>'
         f'</a>'
         f'<div style="font-size:12px;color:rgba(255,255,255,0.45);margin-top:8px;">{src}</div>'
         f'</td></tr></table>'
-        f'<div style="padding:22px 32px 28px;background:#fff;">'
+        f'<div style="padding:26px 40px 32px;background:#fff;">'
         f'<div style="font-size:15px;color:#333;line-height:1.9;">{summary}</div>'
         f'{insight_html}'
         f'<div style="margin-top:18px;">'
@@ -698,35 +698,35 @@ def render_card(a, color, placeholder_bg):
 
     if img:
         thumb = (f'<a href="{link}" style="display:block;text-decoration:none;">'
-                 f'<img src="{img}" alt="" width="100%" style="display:block;width:100%;height:160px;object-fit:cover;border:0;"></a>')
+                 f'<img src="{img}" alt="" width="100%" style="display:block;width:100%;height:220px;object-fit:cover;border:0;border-radius:12px 12px 0 0;"></a>')
     else:
-        thumb = (f'<a href="{link}" style="display:block;text-decoration:none;">'
-                 f'<table width="100%" cellpadding="0" cellspacing="0" style="background:{placeholder_bg};height:120px;">'
+        thumb = (f'<table width="100%" cellpadding="0" cellspacing="0" '
+                 f'style="background:{placeholder_bg};height:100px;border-radius:12px 12px 0 0;">'
                  f'<tr><td align="center" valign="middle">'
-                 f'<div style="width:36px;height:4px;background:{color};opacity:0.3;border-radius:2px;margin:0 auto;"></div>'
-                 f'</td></tr></table></a>')
+                 f'<div style="width:40px;height:3px;background:{color};opacity:0.25;border-radius:2px;margin:0 auto;"></div>'
+                 f'</td></tr></table>')
 
     insight_html = ''
     if insight:
         insight_html = (
-            f'<div style="margin-top:12px;padding:10px 12px;background:{bg};border-left:3px solid {color};border-radius:0 4px 4px 0;">'
-            f'<div style="font-size:11px;font-weight:700;color:{color};letter-spacing:1px;margin-bottom:4px;">💡 INSIGHT</div>'
-            f'<div style="font-size:12px;color:#555;line-height:1.7;">{insight}</div>'
+            f'<div style="margin-top:16px;padding:14px 16px;background:{bg};border-left:3px solid {color};border-radius:0 8px 8px 0;">'
+            f'<div style="font-size:11px;font-weight:700;color:{color};letter-spacing:1.5px;margin-bottom:6px;">💡 INSIGHT</div>'
+            f'<div style="font-size:14px;color:#444;line-height:1.85;">{insight}</div>'
             f'</div>'
         )
 
     return (
-        f'<div style="margin-bottom:20px;overflow:hidden;border-top:3px solid {color};background:#fff;border-bottom:1px solid #eee;">'
-        f'{thumb}'
-        f'<div style="padding:14px 16px 16px;">'
-        f'<a href="{link}" style="text-decoration:none;">'
-        f'<div style="font-size:15px;font-weight:700;color:#111;line-height:1.45;margin-bottom:8px;">{hl}</div>'
-        f'</a>'
-        f'<div style="font-size:13px;color:#555;line-height:1.8;">{summary}</div>'
-        f'{insight_html}'
-        f'<div style="margin-top:10px;">'
-        f'<span style="font-size:11px;font-weight:600;color:{color};">{src}</span>'
+        f'<div style="margin-bottom:28px;border-radius:12px;overflow:hidden;border:1px solid #ebebeb;background:#fff;">'
+        f'<a href="{link}" style="display:block;text-decoration:none;">{thumb}</a>'
+        f'<div style="padding:22px 24px 24px;">'
+        f'<div style="margin-bottom:10px;">'
+        f'<span style="font-size:11px;font-weight:700;color:{color};letter-spacing:1px;">{src}</span>'
         f'</div>'
+        f'<a href="{link}" style="text-decoration:none;">'
+        f'<div style="font-size:18px;font-weight:700;color:#111;line-height:1.5;margin-bottom:12px;letter-spacing:-0.3px;">{hl}</div>'
+        f'</a>'
+        f'<div style="font-size:14px;color:#555;line-height:1.9;">{summary}</div>'
+        f'{insight_html}'
         f'</div></div>'
     )
 
@@ -762,9 +762,9 @@ def gen_briefing(ai_total, scm_total, all_articles):
 def build_html(editor_note, hero, hero_color, ai_top, scm_top, q_hits, ai_total=0, scm_total=0):
     ai_names = {f['name'] for f in AI_FEEDS}
 
-    W = ('max-width:680px;margin:0 auto;background:#fff;'
+    W = ('max-width:780px;margin:0 auto;background:#fff;'
          'font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic",sans-serif;'
-         'color:#111;line-height:1.6;')
+         'color:#111;line-height:1.7;')
 
     H = (f'<body style="margin:0;padding:0;background:#e8e8e8;">'
          f'<style>@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css");</style>'
@@ -784,19 +784,19 @@ def build_html(editor_note, hero, hero_color, ai_top, scm_top, q_hits, ai_total=
 
     quote = random.choice(MORNING_QUOTES)
     H += (f'<table width="100%" cellpadding="0" cellspacing="0" style="background:#111;">'
-          f'<tr><td style="padding:30px 32px 26px;">'
-          f'<div style="font-size:10px;letter-spacing:4px;color:#666;font-weight:600;margin-bottom:14px;">AI × SCM DAILY</div>'
-          f'<div style="font-size:40px;font-weight:800;color:#fff;line-height:1.1;letter-spacing:-1px;">☕ 굿모닝!</div>'
-          f'<div style="font-size:15px;color:#999;margin-top:12px;font-style:italic;line-height:1.6;">{quote}</div>'
-          f'<div style="font-size:12px;color:#555;margin-top:8px;">{kr_date(datetime.now())}</div>'
+          f'<tr><td style="padding:36px 40px 30px;">'
+          f'<div style="font-size:10px;letter-spacing:4px;color:#555;font-weight:600;margin-bottom:16px;">AI × SCM DAILY</div>'
+          f'<div style="font-size:46px;font-weight:800;color:#fff;line-height:1.05;letter-spacing:-1.5px;">☕ 굿모닝!</div>'
+          f'<div style="font-size:16px;color:#888;margin-top:14px;font-style:italic;line-height:1.7;">{quote}</div>'
+          f'<div style="font-size:13px;color:#444;margin-top:10px;letter-spacing:0.3px;">{kr_date(datetime.now())}</div>'
           f'{kw_badge_html}'
           f'</td></tr></table>')
 
     # ── 에디터 노트 (크림 배경)
     if editor_note:
-        H += (f'<div style="padding:24px 32px;background:#FFF8F3;border-bottom:1px solid #f0e8e0;">'
-              f'<div style="font-size:10px;letter-spacing:3px;color:{AI_COLOR};font-weight:700;margin-bottom:12px;">📝 오늘의 한 마디</div>'
-              f'<div style="font-size:15px;color:#333;line-height:2;">{editor_note}</div>'
+        H += (f'<div style="padding:30px 40px;background:#FFF8F3;border-bottom:1px solid #f0e8e0;">'
+              f'<div style="font-size:10px;letter-spacing:3px;color:{AI_COLOR};font-weight:700;margin-bottom:14px;">📝 오늘의 한 마디</div>'
+              f'<div style="font-size:15px;color:#333;line-height:2.1;">{editor_note}</div>'
               f'</div>')
     else:
         H += gen_briefing(ai_total, scm_total, ai_top + scm_top + q_hits)
@@ -804,39 +804,19 @@ def build_html(editor_note, hero, hero_color, ai_top, scm_top, q_hits, ai_total=
     # ── 히어로 (풀블리드)
     H += render_hero(hero, hero_color)
 
-    # ── AI 섹션 헤더
-    H += (f'<table width="100%" cellpadding="0" cellspacing="0" style="background:{AI_COLOR};">'
-          f'<tr><td style="padding:14px 32px;">'
-          f'<div style="font-size:13px;font-weight:800;color:#fff;letter-spacing:1px;">🤖 AI 이슈</div>'
-          f'</td></tr></table>')
+    # ── AI 섹션
+    H += (f'<div style="padding:36px 40px 8px;">'
+          f'<div style="display:inline-block;font-size:11px;font-weight:800;color:{AI_COLOR};'
+          f'letter-spacing:2px;border-bottom:2px solid {AI_COLOR};padding-bottom:6px;margin-bottom:24px;">🤖 AI 이슈</div>'
+          f'</div>')
+    H += f'<div style="padding:0 40px 12px;">{"".join(render_card(a, AI_COLOR, "#f5f0ec") for a in ai_top)}</div>'
 
-    # ── AI 카드 (2열)
-    ai_left  = ai_top[::2]
-    ai_right = ai_top[1::2]
-    ai_left_html  = ''.join(render_card(a, AI_COLOR, '#f5f0ec') for a in ai_left)
-    ai_right_html = ''.join(render_card(a, AI_COLOR, '#f5f0ec') for a in ai_right)
-    H += (f'<table width="100%" cellpadding="0" cellspacing="0" style="background:#fff;">'
-          f'<tr>'
-          f'<td width="50%" valign="top" style="padding:20px 10px 20px 24px;">{ai_left_html}</td>'
-          f'<td width="50%" valign="top" style="padding:20px 24px 20px 10px;">{ai_right_html}</td>'
-          f'</tr></table>')
-
-    # ── SCM 섹션 헤더
-    H += (f'<table width="100%" cellpadding="0" cellspacing="0" style="background:{SCM_COLOR};">'
-          f'<tr><td style="padding:14px 32px;">'
-          f'<div style="font-size:13px;font-weight:800;color:#fff;letter-spacing:1px;">📦 SCM 이슈</div>'
-          f'</td></tr></table>')
-
-    # ── SCM 카드 (2열)
-    scm_left  = scm_top[::2]
-    scm_right = scm_top[1::2]
-    scm_left_html  = ''.join(render_card(a, SCM_COLOR, '#edf5f8') for a in scm_left)
-    scm_right_html = ''.join(render_card(a, SCM_COLOR, '#edf5f8') for a in scm_right)
-    H += (f'<table width="100%" cellpadding="0" cellspacing="0" style="background:#fff;">'
-          f'<tr>'
-          f'<td width="50%" valign="top" style="padding:20px 10px 20px 24px;">{scm_left_html}</td>'
-          f'<td width="50%" valign="top" style="padding:20px 24px 20px 10px;">{scm_right_html}</td>'
-          f'</tr></table>')
+    # ── SCM 섹션
+    H += (f'<div style="padding:20px 40px 8px;border-top:1px solid #f0f0f0;">'
+          f'<div style="display:inline-block;font-size:11px;font-weight:800;color:{SCM_COLOR};'
+          f'letter-spacing:2px;border-bottom:2px solid {SCM_COLOR};padding-bottom:6px;margin-bottom:24px;">📦 SCM 이슈</div>'
+          f'</div>')
+    H += f'<div style="padding:0 40px 12px;">{"".join(render_card(a, SCM_COLOR, "#edf5f8") for a in scm_top)}</div>'
 
     # ── Quick Hits
     if q_hits:
@@ -845,27 +825,27 @@ def build_html(editor_note, hero, hero_color, ai_top, scm_top, q_hits, ai_total=
             is_ai = a['source'] in ai_names
             tc  = AI_COLOR if is_ai else SCM_COLOR
             tl  = 'AI' if is_ai else 'SCM'
-            bd  = 'border-bottom:1px solid #f0f0f0;' if i < len(q_hits)-1 else ''
+            bd  = 'border-bottom:1px solid #efefef;' if i < len(q_hits)-1 else ''
             ttl = a.get('title_hl') or esc(a['title'])
             rows += (
                 f'<table width="100%" cellpadding="0" cellspacing="0" style="{bd}">'
                 f'<tr>'
-                f'<td width="44" style="padding:11px 10px 11px 0;vertical-align:middle;">'
+                f'<td width="44" style="padding:13px 10px 13px 0;vertical-align:middle;">'
                 f'<span style="display:inline-block;width:36px;text-align:center;font-size:10px;'
-                f'font-weight:700;color:#fff;background:{tc};padding:3px 0;border-radius:3px;">{tl}</span>'
+                f'font-weight:700;color:#fff;background:{tc};padding:4px 0;border-radius:6px;">{tl}</span>'
                 f'</td>'
-                f'<td style="padding:11px 0;vertical-align:middle;">'
-                f'<a href="{a["link"]}" style="font-size:14px;color:#222;text-decoration:none;line-height:1.5;">{ttl}</a>'
+                f'<td style="padding:13px 0;vertical-align:middle;">'
+                f'<a href="{a["link"]}" style="font-size:14px;color:#222;text-decoration:none;line-height:1.6;">{ttl}</a>'
                 f'</td>'
                 f'</tr></table>'
             )
-        H += (f'<div style="padding:22px 32px 24px;background:#f7f7f7;border-top:3px solid #111;">'
-              f'<div style="font-size:10px;letter-spacing:3px;color:#999;font-weight:700;margin-bottom:14px;">⚡ 빠르게 보는 헤드라인</div>'
+        H += (f'<div style="padding:28px 40px 32px;background:#f7f7f7;border-top:1px solid #ebebeb;">'
+              f'<div style="font-size:10px;letter-spacing:3px;color:#aaa;font-weight:700;margin-bottom:18px;">⚡ 빠르게 보는 헤드라인</div>'
               f'{rows}</div>')
 
     H += (f'<table width="100%" cellpadding="0" cellspacing="0" style="background:#111;">'
-          f'<tr><td style="padding:20px 32px;text-align:center;">'
-          f'<div style="font-size:12px;color:#555;">📬 AI × SCM Daily &nbsp;·&nbsp; 좋은 하루 보내세요 ✨</div>'
+          f'<tr><td style="padding:24px 40px;text-align:center;">'
+          f'<div style="font-size:12px;color:#555;letter-spacing:0.5px;">📬 AI × SCM Daily &nbsp;·&nbsp; 좋은 하루 보내세요 ✨</div>'
           f'</td></tr></table>')
     H += '</div></body>'
     head = '<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>'
