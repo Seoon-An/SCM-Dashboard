@@ -13,7 +13,7 @@ with open('config.json', encoding='utf-8') as f:
     config = json.load(f)
 
 GEMINI_KEY    = os.environ.get('GEMINI_API_KEY', '')
-GEMINI_MODEL  = 'gemini-2.0-flash'
+GEMINI_MODEL  = 'gemini-2.5-flash'
 GEMINI_ENABLED = True
 TO_EMAIL     = os.environ['TO_EMAIL']
 GMAIL_USER   = os.environ['GMAIL_ADDRESS']
