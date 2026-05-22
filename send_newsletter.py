@@ -524,30 +524,33 @@ def highlight_title(title, color):
     return result
 
 def highlight_body(text, color):
-    """본문 강조: 따옴표 핵심 어구 > 관심키워드 배지 > 수치 > 임팩트 표현"""
+    """본문 강조: 핵심 내용 기반 (키워드 단순 매칭 제외)"""
     bg = AI_BG if color == AI_COLOR else SCM_BG
     result = esc(text)
 
-    # 1. 관심 키워드 → 배지
-    for kw in sorted(config.get('keywords', []), key=len, reverse=True):
-        result = re.sub(re.escape(esc(kw)),
-            f'<span style="background:{bg};padding:1px 5px;border-radius:3px;font-weight:700;color:{color};">{esc(kw)}</span>',
-            result, count=1, flags=re.IGNORECASE)
-
-    # 2. 작은따옴표 속 핵심 어구 → 하이라이트 볼드 (한국 기사 관행: 중요 개념을 ''로 감쌈)
-    #    e.g. '국가 전략기술 거점', 'AI 대전환' 등
+    # 1. 작은따옴표 속 핵심 어구 (한국 기사 관행: 중요 개념을 ''로 감쌈)
     result = re.sub(
-        r'&#39;([^&#]{4,25})&#39;',   # esc() 후 ' → &#39;
-        lambda m: f'<strong style="color:{color};">&#39;{m.group(1)}&#39;</strong>',
+        r'&#39;([^&#]{4,25})&#39;',
+        lambda m: f'<span style="background:{bg};padding:1px 5px;border-radius:3px;font-weight:700;color:{color};">&#39;{m.group(1)}&#39;</span>',
         result
     )
 
-    # 3. 수치+단위 → 볼드
+    # 2. 수치+단위 → 볼드
     result = re.sub(
         r'(\d[\d,]*(?:\.\d+)?(?:억|조|만|천)?(?:원|달러|위안|유로)?\s*(?:%|퍼센트|배|건|명|개))',
         f'<strong style="color:{color};">\\1</strong>', result)
 
-    # 4. 임팩트 표현 → 볼드
+    # 3. 기업명 패턴 (XX전자, XX자동차, XX그룹 등) → 배지
+    result = re.sub(
+        r'([가-힣A-Z][가-힣A-Za-z]{1,8}(?:전자|자동차|그룹|물산|네트워크|솔루션|시스템|테크|로보틱스|모빌리티|코리아|글로벌))',
+        f'<strong style="color:{color};">\\1</strong>', result)
+
+    # 4. 인물+직함 패턴 (홍길동 CEO, 젠슨 황 대표 등, 이름에 공백 허용)
+    result = re.sub(
+        r'([가-힣A-Za-z·]{1,6}(?:\s[가-힣A-Za-z·]{1,6})?\s*(?:CEO|CTO|CFO|COO|대표|회장|사장|부사장|의장))',
+        f'<strong style="color:{color};">\\1</strong>', result)
+
+    # 5. 임팩트 표현 → 볼드
     for kw in sorted(_IMPACT_KW, key=len, reverse=True):
         result = result.replace(esc(kw), f'<strong style="color:{color};">{esc(kw)}</strong>', 1)
 
