@@ -490,7 +490,8 @@ def gen_editor_note(ai_top, scm_top, q_hits):
 HTML 강조 (키워드 단순 매칭 금지 — 문장 안에서 실제로 핵심적인 어구·수치·변화를 담은 구절만 강조):
 AI 문단 → <strong style="color:#C85A35">핵심 어구</strong> 또는 <span style="background:#FFF3E0;padding:1px 6px;border-radius:3px;font-weight:600;color:#C85A35;">핵심 어구</span>
 SCM 문단 → <strong style="color:#175F7A">핵심 어구</strong> 또는 <span style="background:#E3F2F8;padding:1px 6px;border-radius:3px;font-weight:600;color:#175F7A;">핵심 어구</span>
-각 문단에서 2~3개 어구만 강조. 위 태그만 사용. 문단 구분은 <br><br>.
+각 문단에서 2~3개 어구만 강조. 위 태그만 사용.
+문단 구분: 두 문단을 <p style="margin:0 0 16px 0">...</p> 태그로 각각 감쌀 것.
 
 에디터 노트만 출력 (다른 말 없이):"""
     for attempt in range(3):
@@ -509,17 +510,20 @@ def gen_daily_quote():
     if not GEMINI_ENABLED:
         _day_seed = int(datetime.now().strftime('%Y%m%d'))
         return MORNING_QUOTES[_day_seed % len(MORNING_QUOTES)]
-    prompt = f"""오늘 날짜 {datetime.now().strftime('%Y-%m-%d')} 에 어울리는 동서양 철학자 또는 불교 명언 하나를 선택해줘.
+    prompt = f"""불교(붓다, 법구경, 선가어록), 동양철학(노자, 공자, 장자), 서양철학(소크라테스, 아리스토텔레스, 마르쿠스 아우렐리우스, 세네카, 에픽테토스, 플라톤) 중에서 명언 하나만 골라줘.
 
-조건:
-- 불교(붓다, 법구경, 선가어록), 동양철학(노자, 공자, 장자), 서양철학(소크라테스, 아리스토텔레스, 마르쿠스 아우렐리우스, 세네카, 에픽테토스, 플라톤 등) 중에서 선택
-- 반드시 실제 존재하는 명언만
-- 한국어로 번역
-- 딱 한 줄만: "명언 내용 — 출처" 형식으로 출력
-- 다른 설명, 따옴표, 마크다운 없이 한 줄만"""
+출력 형식: 명언 내용 — 출처
+예시: 모든 것은 변한다. 변하지 않는 것은 변한다는 사실뿐이다. — 붓다
+
+절대 지키기:
+- 설명, 날짜 언급, 배경 설명 금지
+- 추천 이유 금지
+- 따옴표, 마크다운, 볼드체 금지
+- 오직 "명언 — 출처" 한 줄만"""
     result = call_gemini(prompt).strip()
+    result = re.sub(r'[*_`]', '', result).strip()
     result = re.sub(r'^["\']|["\']$', '', result).strip()
-    if result and '—' in result:
+    if result and '—' in result and '\n' not in result:
         print(f'  오늘의 명언: {result[:60]}')
         return result
     _day_seed = int(datetime.now().strftime('%Y%m%d'))
@@ -833,7 +837,7 @@ def build_html(editor_note, hero, hero_color, ai_top, scm_top, q_hits, ai_total=
     if editor_note:
         H += (f'<div style="padding:30px 40px;background:#FFF8F3;border-bottom:1px solid #f0e8e0;">'
               f'<div style="font-size:10px;letter-spacing:3px;color:{AI_COLOR};font-weight:700;margin-bottom:14px;">📝 오늘의 한 마디</div>'
-              f'<div style="font-size:15px;color:#333;line-height:2.1;">{editor_note}</div>'
+              f'<div style="font-size:15px;color:#333;line-height:2;">{editor_note}</div>'
               f'</div>')
     else:
         H += gen_briefing(ai_total, scm_total, ai_top + scm_top + q_hits)
