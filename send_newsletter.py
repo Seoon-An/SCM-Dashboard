@@ -506,6 +506,13 @@ _HIGHLIGHT_KW = (config.get('keywords', []) +
                  ['AI', '인공지능', 'SCM', '물류', '공급망', '자동화', '에이전트',
                   'FBA', '수요예측', '재고', '로봇', '이커머스', '관세', '운임'])
 
+_MAJOR_COMPANIES = [
+    '엔비디아', '구글', '아마존', '메타', '애플', '마이크로소프트', '테슬라',
+    '오픈AI', 'OpenAI', '알파벳', '삼성전자', 'SK하이닉스', 'LG전자',
+    '현대차', '기아', '롯데', 'CJ', 'GS', '쿠팡', '네이버', '카카오',
+    'DHL', 'FedEx', 'UPS', 'Maersk', '머스크', 'CEVA', 'DB쉥커',
+]
+
 _IMPACT_KW = ['최초', '최대', '최고', '역대', '급증', '급락', '급등', '대폭', '전격',
               '세계 최', '국내 최', '사상 최', '혁신', '붕괴', '위기', '돌파']
 
@@ -528,29 +535,39 @@ def highlight_body(text, color):
     bg = AI_BG if color == AI_COLOR else SCM_BG
     result = esc(text)
 
-    # 1. 작은따옴표 속 핵심 어구 (한국 기사 관행: 중요 개념을 ''로 감쌈)
+    # 1. 따옴표 속 핵심 어구 (작은따옴표 ' 및 큰따옴표 " 모두)
     result = re.sub(
         r'&#39;([^&#]{4,25})&#39;',
         lambda m: f'<span style="background:{bg};padding:1px 5px;border-radius:3px;font-weight:700;color:{color};">&#39;{m.group(1)}&#39;</span>',
         result
     )
+    result = re.sub(
+        r'&quot;([^&]{4,25})&quot;',
+        lambda m: f'<span style="background:{bg};padding:1px 5px;border-radius:3px;font-weight:700;color:{color};">&quot;{m.group(1)}&quot;</span>',
+        result
+    )
 
     # 2. 수치+단위 → 볼드
     result = re.sub(
-        r'(\d[\d,]*(?:\.\d+)?(?:억|조|만|천)?(?:원|달러|위안|유로)?\s*(?:%|퍼센트|배|건|명|개))',
+        r'(\d[\d,]*(?:\.\d+)?(?:억|조|만|천)?(?:원|달러|위안|유로|%|퍼센트|배|건|명|개))',
         f'<strong style="color:{color};">\\1</strong>', result)
 
-    # 3. 기업명 패턴 (XX전자, XX자동차, XX그룹 등) → 배지
+    # 3. 주요 기업명 (리스트 기반)
+    for co in sorted(_MAJOR_COMPANIES, key=len, reverse=True):
+        result = result.replace(esc(co), f'<strong style="color:{color};">{esc(co)}</strong>', 1)
+
+    # 4. 기업명 접미사 패턴 (XX전자, XX그룹 등)
     result = re.sub(
         r'([가-힣A-Z][가-힣A-Za-z]{1,8}(?:전자|자동차|그룹|물산|네트워크|솔루션|시스템|테크|로보틱스|모빌리티|코리아|글로벌))',
         f'<strong style="color:{color};">\\1</strong>', result)
 
-    # 4. 인물+직함 패턴 (홍길동 CEO, 젠슨 황 대표 등, 이름에 공백 허용)
+    # 5. 인물+직함 패턴 — 괄호 내용 무시하고 이름+직함만 매칭
     result = re.sub(
-        r'([가-힣A-Za-z·]{1,6}(?:\s[가-힣A-Za-z·]{1,6})?\s*(?:CEO|CTO|CFO|COO|대표|회장|사장|부사장|의장))',
-        f'<strong style="color:{color};">\\1</strong>', result)
+        r'([가-힣A-Za-z·]{1,6}(?:\s[가-힣A-Za-z·]{1,6})?)\s*(?:\([^)]{0,30}\)\s*)?(?:\([^)]{0,30}\)\s*)?\s*(CEO|CTO|CFO|COO|대표|회장|사장|부사장|의장)',
+        lambda m: f'<strong style="color:{color};">{m.group(1)} {m.group(2)}</strong>',
+        result)
 
-    # 5. 임팩트 표현 → 볼드
+    # 6. 임팩트 표현 → 볼드
     for kw in sorted(_IMPACT_KW, key=len, reverse=True):
         result = result.replace(esc(kw), f'<strong style="color:{color};">{esc(kw)}</strong>', 1)
 
